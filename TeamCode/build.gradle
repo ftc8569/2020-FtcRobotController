@@ -1,4 +1,4 @@
-//
+ //
 // build.gradle in TeamCode
 //
 // Most of the definitions for building your module reside in a common, shared
@@ -21,4 +21,5 @@ repositories {
 dependencies {
     annotationProcessor files('lib/OpModeAnnotationProcessor.jar')
     implementation 'org.openftc:easyopencv:1.4.1'
+    implementation 'com.arcrobotics:ftclib:1.0.1' // current version
 }
