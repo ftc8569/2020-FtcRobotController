@@ -23,16 +23,16 @@ public class ShooterTest extends OpMode {
 
 
 
-    /*Easily adjustable constants for quick testing and prototyping*/
-    public final double     VELOTHRESHOLD = 0.95,
-                            SHOOTERSERVOBACK = .5,
-                            SHOOTERSERVOFORWARD = 1;
-    public final int        FLICKDELAY = 1000,
-                            STAYTIME = 500,
-                            MAXVELO = 2400,
+    /*Easily adjustable constants for quick testing and prototyping, now adjustable using FTCDashboard. They still have the naming convention of final variables even though they have to be static for that to work though.*/
+    public static double    VELOTHRESHOLD = 0.125,
+                            SHOOTERSERVOBACK = .75,
+                            SHOOTERSERVOFORWARD = 0;
+    public static int       FLICKDELAY = 300,
+                            STAYTIME = FLICKDELAY/2,
+                            MAXVELO = 1 /* was 2400. Changed for ease of testing*/,
                             POWER_ADJUSTMENT_DELAY = 250; //the amount of time it has to wait before adjusting power of the shooter motor again again.
-    public final boolean    USESHOOTERENCODER = true;
-    final int               SHOOTERVERSION = 3;
+    public static boolean   USESHOOTERENCODER = true;
+    public static int       SHOOTERVERSION = 3;
 
     FtcDashboard dashboard;
     public static PIDFCoefficients pidf = new PIDFCoefficients();
@@ -46,7 +46,6 @@ public class ShooterTest extends OpMode {
     Log log;
 
     public void init() {
-        dashboard = FtcDashboard.getInstance();
         initMotors();
         ShooterServo = hardwareMap.get(Servo.class, "ShooterServo");
         ShooterServo.setDirection(Servo.Direction.REVERSE);
@@ -66,8 +65,9 @@ public class ShooterTest extends OpMode {
         }
 
         ShooterMotorFront.setPower(pow);
-//        ShooterMotorBack.setPower(pow);
+        if(motorCount == 2) ShooterMotorBack.setPower(pow);
         telemetry.addData("CurrentPower:", pow);
+
         //little bit of debug because I'm interested. default for 5202 is 10,3,0,0
         telemetry.addData("Default 5202 PIDF CoEffs:", ShooterMotorFront.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER).toString());
         maxVelo = Math.max(maxVelo, Math.abs(ShooterMotorFront.getVelocity()));
@@ -75,10 +75,12 @@ public class ShooterTest extends OpMode {
         if(motorCount == 1) telemetry.addData("CurrentVelo:", ShooterMotorFront.getVelocity());
         else telemetry.addData("CurrentVelo Frontmotor, Backmotor:", ShooterMotorFront.getVelocity() + ", " + ShooterMotorBack.getVelocity());
         telemetry.addData("ServoPosition", ShooterServo.getPosition());
+        telemetry.addData("Velo in range", Math.abs(ShooterMotorFront.getVelocity() / MAXVELO) > pow - VELOTHRESHOLD && Math.abs(ShooterMotorFront.getVelocity() / MAXVELO) > pow + VELOTHRESHOLD);
+        telemetry.addData("Shot Count:", (shotCount % 3 + 1));
 
 
         if(System.currentTimeMillis() - lastFlick < STAYTIME) ShooterServo.setPosition(1);
-        else if(gamepad1.a && Math.abs(ShooterMotorFront.getVelocity() / MAXVELO) > pow * VELOTHRESHOLD && Math.abs(ShooterMotorFront.getVelocity() / MAXVELO) > pow * (2 - VELOTHRESHOLD) && System.currentTimeMillis() - lastFlick > FLICKDELAY) {
+        else if(gamepad1.a && Math.abs(ShooterMotorFront.getVelocity() / MAXVELO) > pow - VELOTHRESHOLD && Math.abs(ShooterMotorFront.getVelocity() / MAXVELO) > pow + VELOTHRESHOLD && System.currentTimeMillis() - lastFlick > FLICKDELAY) {
             lastFlick = System.currentTimeMillis();
             ShooterServo.setPosition(SHOOTERSERVOFORWARD);
 //            shotCount++;
@@ -129,7 +131,7 @@ public class ShooterTest extends OpMode {
             break;
 
             case 3:
-                pidf = new PIDFCoefficients(7, 3, 0, 0); //orig 1.41,.14, 0,14.1
+                pidf = new PIDFCoefficients(10, 3, 0, 0); //orig 1.41,.14, 0,14.1
                 motorCount = 1;
             break;
 
