@@ -45,6 +45,7 @@ public class ShooterTest extends OpMode {
     DcMotorEx ShooterMotorFront, ShooterMotorBack;// not using a FTCLib motor because I want to see how the built in FTC_APP PID controller handles shooting. Maybe I'll transition it over and steal the PID values from the FTC_APP.
     Log log;
 
+
     public void init() {
         initMotors();
         ShooterServo = hardwareMap.get(Servo.class, "ShooterServo");
