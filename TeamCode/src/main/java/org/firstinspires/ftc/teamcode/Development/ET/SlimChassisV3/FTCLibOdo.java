@@ -21,7 +21,7 @@ import org.firstinspires.ftc.teamcode.Development.ET.util.DashboardUtil;
 
 import java.util.function.DoubleSupplier;
 
-@TeleOp(group = "ET")
+@TeleOp(group = "Dev: FTCLibOdo")
 public class FTCLibOdo extends OpMode {
 
     final double TRACKWIDTH = 7 + (7./16), CENTER_WHEEL_OFFSET = -6.25;
