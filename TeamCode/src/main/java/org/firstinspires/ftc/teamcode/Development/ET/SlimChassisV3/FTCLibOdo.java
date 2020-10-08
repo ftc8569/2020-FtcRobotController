@@ -45,11 +45,10 @@ public class FTCLibOdo extends OpMode {
     Pose2d robotPose, oldPose;
     private FtcDashboard dashboard;
 
-    public void start() {
-        telemetry.addData(">", "Starting Init(), please wait");
-    }
+
 
     public void init() {
+        telemetry.addData(">", "Starting Init(), please wait");
         FtcDashboard.start();
         dashboard = FtcDashboard.getInstance();
         dashboard.setTelemetryTransmissionInterval(25);
