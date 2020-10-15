@@ -1,8 +1,8 @@
-package org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.Importable;
+package org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.ETControl;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.ETControl.MotorInitializer;
+import org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.ETControl.DriveTrainController;
 
 import java.util.function.DoubleSupplier;
 
@@ -13,10 +13,11 @@ public class FieldOrientedDrive {
     DoubleSupplier theta, x, y, r;
     HardwareMap hwm;
 
-    public FieldOrientedDrive(Class<? extends MotorInitializer> mi, DoubleSupplier theta, DoubleSupplier x, DoubleSupplier y, DoubleSupplier r) {
-    ds = true;
-    hw = true;
-
+    public FieldOrientedDrive(Class<? extends DriveTrainController> mi, DoubleSupplier theta, DoubleSupplier x, DoubleSupplier y, DoubleSupplier r) throws InstantiationException, IllegalAccessException {
+        ds = true;
+        hw = true;
+        DriveTrainController obj = mi.newInstance();
+//        obj.initialize();
 
     }
 
