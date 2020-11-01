@@ -6,15 +6,18 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.arcrobotics.ftclib.geometry.Pose2d;
 import com.arcrobotics.ftclib.geometry.Rotation2d;
-import com.arcrobotics.ftclib.hardware.JSTEncoder;
 import com.arcrobotics.ftclib.hardware.RevIMU;
-import com.arcrobotics.ftclib.kinematics.ConstantVeloMecanumOdometry;
+import com.arcrobotics.ftclib.hardware.motors.Motor;
+import com.arcrobotics.ftclib.hardware.motors.MotorEx;
+import com.arcrobotics.ftclib.kinematics.HolonomicOdometry;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 import org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.ETControl.FTCLibMotorController;
+import org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.ETControl.FieldOrientedDrive;
 import org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.ETControl.MotorBulkRead;
 import org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.ETControl.SimpleMotorController;
 import org.firstinspires.ftc.teamcode.Development.ET.util.DashboardUtil;
@@ -26,11 +29,11 @@ public class FTCLibOdo extends OpMode {
 
     final double TRACKWIDTH = 7 + (7./16), CENTER_WHEEL_OFFSET = -6.25;
 
-    public double[] motorCPRs  = {
-            383.6,
-            383.6,
-            383.6,
-            383.6
+    public Motor.GoBILDA[] motorCPRs  = {
+            Motor.GoBILDA.NONE,
+            Motor.GoBILDA.NONE,
+            Motor.GoBILDA.NONE,
+            Motor.GoBILDA.NONE
     };
 
     FTCLibMotorController dmc;
@@ -39,11 +42,12 @@ public class FTCLibOdo extends OpMode {
     final double FORWARD_MULTIPLIER = 1, RIGHT_MULTIPLIER = 1;
     RevIMU imu;
     double headingConst;
-    ConstantVeloMecanumOdometry odo;
+    HolonomicOdometry odo;
     DoubleSupplier heading, leftEncoder, rightEncoder, horizontalEncoder, djx, djy, dr;
-    JSTEncoder le, re, he;
+    Motor le, re, he;
     Pose2d robotPose, oldPose;
     private FtcDashboard dashboard;
+    FieldOrientedDrive fod;
 
 
 
@@ -61,11 +65,13 @@ public class FTCLibOdo extends OpMode {
     imu.init();
 //    imu.invertGyro();
     imu.reset();
-    le = new JSTEncoder(hardwareMap, driveMotorNames.FrontLeftMotor.name());
+    le = new Motor(hardwareMap, driveMotorNames.FrontLeftMotor.name());
     le.setDistancePerPulse(DISTANCE_PER_PULSE);
-    re = new JSTEncoder(hardwareMap, driveMotorNames.BackRightMotor.name());
+
+
+    re = new Motor(hardwareMap, driveMotorNames.BackRightMotor.name());
     re.setDistancePerPulse(DISTANCE_PER_PULSE);
-    he = new JSTEncoder(hardwareMap, driveMotorNames.FrontRightMotor.name());
+    he = new Motor(hardwareMap, driveMotorNames.FrontRightMotor.name());
     he.setDistancePerPulse(DISTANCE_PER_PULSE);
 //    he.setInverted(!he.getInverted());
     MotorBulkRead.MotorBulkMode(LynxModule.BulkCachingMode.MANUAL, hardwareMap);
@@ -79,8 +85,8 @@ public class FTCLibOdo extends OpMode {
 
     leftEncoder = () -> le.getDistance() * FORWARD_MULTIPLIER;
     rightEncoder = () -> re.getDistance() * FORWARD_MULTIPLIER;
-    horizontalEncoder = () -> he.getDistance() * FORWARD_MULTIPLIER;
-    odo = new ConstantVeloMecanumOdometry(heading, leftEncoder, rightEncoder, horizontalEncoder, TRACKWIDTH, CENTER_WHEEL_OFFSET);
+    horizontalEncoder = () -> he.getDistance() * RIGHT_MULTIPLIER;
+    odo = new HolonomicOdometry(leftEncoder, rightEncoder, horizontalEncoder, TRACKWIDTH, CENTER_WHEEL_OFFSET);
 
     djx = () -> gamepad1.left_stick_x;
     djy = () -> gamepad1.left_stick_y;
@@ -88,54 +94,35 @@ public class FTCLibOdo extends OpMode {
 
     telemetry.addData(">", "Robot Initialized, have some fun!");
 
+        try {
+            fod = new FieldOrientedDrive(SlimChassisV3Controller.class, hardwareMap, heading, djx, djy, dr);
+        } catch (InstantiationException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
 
 
     }
 
     public void loop() {
-    MotorBulkRead.clearCache(); // since we have the bulk caching mode on manual, we have to clear the cache every iteration.
-    odo.updatePose();
-    headingConst = Math.toRadians(imu.getHeading());
+        if(!fod.isEnabled()) fod.enable();
+        MotorBulkRead.clearCache(); // since we have the bulk caching mode on manual, we have to clear the cache every iteration.
+        odo.updatePose();
+        headingConst = Math.toRadians(imu.getHeading());
 
-    oldPose = odo.getPose();
-    robotPose = new Pose2d(oldPose.getTranslation().rotateBy(new Rotation2d(Math.PI/2)), oldPose.getRotation());
-    telemetry.addData("Current Pose", robotPose.toString());
+        oldPose = odo.getPose();
+        robotPose = new Pose2d(oldPose.getTranslation().rotateBy(new Rotation2d(Math.PI/2)), oldPose.getRotation());
+        telemetry.addData("Current Pose", robotPose.toString());
 
-    double[] mpows = driveFieldOriented(djx.getAsDouble(), -djy.getAsDouble(), dr.getAsDouble(), heading.getAsDouble());
-    dmc.setMotor(driveMotorNames.FrontLeftMotor, mpows[0]);
-    dmc.setMotor(driveMotorNames.FrontRightMotor, mpows[1]);
-    dmc.setMotor(driveMotorNames.BackLeftMotor, mpows[2]);
-    dmc.setMotor(driveMotorNames.BackRightMotor, mpows[3]);
+        fod.control();
 
-    telemetry.addData("Right,Horizon,", re.getCounts() + ", " + he.getCounts());
-    codeImStealingFromRoadRunner();
+
+        telemetry.addData("Right,Horizon,", re.getCurrentPosition() + ", " + he.getCurrentPosition());
+        codeImStealingFromRoadRunner();
 
     }
 
     //outputs correct motor values in order FL, FR, BL, BR
-    public double[] driveFieldOriented(double jx, double jy, double rot, double gyrangleRad) {
-        double  temp   = jy * Math.cos(gyrangleRad) - jx * Math.sin(gyrangleRad);
-        jx  = jy * Math.sin(gyrangleRad) + jx * Math.cos(gyrangleRad);
-        jy = temp;
 
-        double frontLeft  = jy + jx + rot;
-        double frontRight = jy - jx - rot;
-        double backLeft   = jy - jx + rot;
-        double backRight  = jy + jx - rot;
-
-        double max = Math.abs(frontLeft);
-        if(Math.abs(frontRight) > max) max = Math.abs(frontRight);
-        if(Math.abs(backLeft) > max) max = Math.abs(backLeft);
-        if(Math.abs(backRight) > max) max = Math.abs(backRight);
-
-        if(max > 1) {
-            frontRight /= max;
-            frontLeft  /= max;
-            backRight  /= max;
-            backLeft   /= max;
-        }
-        return new double[]{frontLeft, frontRight, backLeft, backRight};
-    }
 
     public void stop() {
 
