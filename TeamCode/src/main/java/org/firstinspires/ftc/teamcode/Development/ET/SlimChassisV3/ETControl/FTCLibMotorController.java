@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.ETControl;
 
+import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.arcrobotics.ftclib.hardware.motors.MotorEx;
-import com.arcrobotics.ftclib.hardware.motors.SimpleMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -13,48 +13,48 @@ import java.util.Objects;
 
 public class FTCLibMotorController implements MotorController {
     protected ArrayList<String> motorNames = new ArrayList<>();
-    public ArrayList<SimpleMotorEx> motors = new ArrayList<>();
+    public ArrayList<MotorEx> motors = new ArrayList<>();
     protected ArrayList<Double> motorCPRs = new ArrayList<>();
     protected HardwareMap hw;
 
 
-    public FTCLibMotorController(String[] devicenames, HardwareMap hwm, double cpr) {
+    public FTCLibMotorController(String[] devicenames, HardwareMap hwm, Motor.GoBILDA cpr) {
         hw = hwm;
         Collections.addAll(motorNames, devicenames);
         motorNames.forEach(mot -> {
-            motors.add(new SimpleMotorEx(mot, hwm, cpr));
-            motorCPRs.add(cpr);
+            motors.add(new MotorEx(hwm, mot, cpr));
+            motorCPRs.add(cpr.getCPR());
         });
     }
 
-    public FTCLibMotorController(Class<? extends Enum<?>> devicenames, HardwareMap hwm, double cpr) {
+    public FTCLibMotorController(Class<? extends Enum<?>> devicenames, HardwareMap hwm, Motor.GoBILDA cpr) {
         hw = hwm;
         Collections.addAll(motorNames, getNames(devicenames));
         motorNames.forEach(mot -> {
-            motors.add(new SimpleMotorEx(mot, hwm, cpr));
-            motorCPRs.add(cpr);
+            motors.add(new MotorEx(hwm, mot, cpr));
+            motorCPRs.add(cpr.getCPR());
         });
     }
 
-    public FTCLibMotorController(String[] devicenames, HardwareMap hwm, double[] MotorCPRs) {
+    public FTCLibMotorController(String[] devicenames, HardwareMap hwm, Motor.GoBILDA[] MotorCPRs) {
         hw = hwm;
         if(Objects.requireNonNull(devicenames).length == Objects.requireNonNull(MotorCPRs).length) {
             for(int i = 0; i < devicenames.length; i++) {
                 motorNames.add(devicenames[i]);
-                motorCPRs.add(MotorCPRs[i]);
-                        motors.add(new SimpleMotorEx(devicenames[i], hwm, MotorCPRs[i]));
+                motorCPRs.add(MotorCPRs[i].getCPR());
+                        motors.add(new MotorEx(hwm, devicenames[i], MotorCPRs[i]));
                 }
             }
          else throw new IllegalArgumentException("Arrays are not the same length");
     }
 
-    public FTCLibMotorController(Class<? extends Enum<?>> devicenames, HardwareMap hwm, double[] MotorCPRs) {
+    public FTCLibMotorController(Class<? extends Enum<?>> devicenames, HardwareMap hwm, Motor.GoBILDA[] MotorCPRs) {
         hw = hwm;
         if(Objects.requireNonNull(devicenames.getEnumConstants()).length == Objects.requireNonNull(MotorCPRs).length) {
             for(int i = 0; i < getNames(devicenames).length; i++) {
                 motorNames.add(getNames(devicenames)[i]);
-                motorCPRs.add(MotorCPRs[i]);
-                        motors.add(new SimpleMotorEx(getNames(devicenames)[i], hwm, MotorCPRs[i]));
+                motorCPRs.add(MotorCPRs[i].getCPR());
+                motors.add(new MotorEx(hwm, getNames(devicenames)[i], MotorCPRs[i]));
             }
         } else throw new IllegalArgumentException("Enum " + devicenames.getName() + " and motor type array are not the same length");
     }
@@ -101,28 +101,28 @@ public class FTCLibMotorController implements MotorController {
 
     @Override
     public void zeroPowerBehavior(DcMotor.ZeroPowerBehavior zpb) {
-        motors.forEach(motor -> motor.setZeroPowerBehavior(zpb == DcMotor.ZeroPowerBehavior.BRAKE ? MotorEx.ZeroPowerBehavior.BREAK : MotorEx.ZeroPowerBehavior.valueOf(zpb.name())));
+        motors.forEach(motor -> motor.setZeroPowerBehavior(zpb == DcMotor.ZeroPowerBehavior.BRAKE ? MotorEx.ZeroPowerBehavior.BRAKE : MotorEx.ZeroPowerBehavior.valueOf(zpb.name())));
     }
 
     @Override
     public void zeroPowerBehavior(String motorname, DcMotor.ZeroPowerBehavior zpb) {
-        motors.get(findMotor(motorname)).setZeroPowerBehavior(zpb == DcMotor.ZeroPowerBehavior.BRAKE ? MotorEx.ZeroPowerBehavior.BREAK : MotorEx.ZeroPowerBehavior.valueOf(zpb.name()));
+        motors.get(findMotor(motorname)).setZeroPowerBehavior(zpb == DcMotor.ZeroPowerBehavior.BRAKE ? MotorEx.ZeroPowerBehavior.BRAKE : MotorEx.ZeroPowerBehavior.valueOf(zpb.name()));
     }
 
     @Override
     public void zeroPowerBehavior(Enum motorname, DcMotor.ZeroPowerBehavior zpb) {
-        motors.get(findMotor(motorname)).setZeroPowerBehavior(zpb == DcMotor.ZeroPowerBehavior.BRAKE ? MotorEx.ZeroPowerBehavior.BREAK : MotorEx.ZeroPowerBehavior.valueOf(zpb.name()));
+        motors.get(findMotor(motorname)).setZeroPowerBehavior(zpb == DcMotor.ZeroPowerBehavior.BRAKE ? MotorEx.ZeroPowerBehavior.BRAKE : MotorEx.ZeroPowerBehavior.valueOf(zpb.name()));
     }
 
     @Override
     public void zeroPowerBehavior(int motorindex, DcMotor.ZeroPowerBehavior zpb) {
-        motors.get(motorindex).setZeroPowerBehavior(zpb == DcMotor.ZeroPowerBehavior.BRAKE ? MotorEx.ZeroPowerBehavior.BREAK : MotorEx.ZeroPowerBehavior.valueOf(zpb.name()));
+        motors.get(motorindex).setZeroPowerBehavior(zpb == DcMotor.ZeroPowerBehavior.BRAKE ? MotorEx.ZeroPowerBehavior.BRAKE : MotorEx.ZeroPowerBehavior.valueOf(zpb.name()));
     }
 
     @Override
     public void zeroPowerBehavior(String[] motornames, DcMotor.ZeroPowerBehavior zpb) {
         for (String motor : motornames) {
-                motors.get(findMotor(motor)).setZeroPowerBehavior(zpb == DcMotor.ZeroPowerBehavior.BRAKE ? MotorEx.ZeroPowerBehavior.BREAK : MotorEx.ZeroPowerBehavior.valueOf(zpb.name()));
+                motors.get(findMotor(motor)).setZeroPowerBehavior(zpb == DcMotor.ZeroPowerBehavior.BRAKE ? MotorEx.ZeroPowerBehavior.BRAKE : MotorEx.ZeroPowerBehavior.valueOf(zpb.name()));
         }
     }
 
@@ -184,10 +184,10 @@ public class FTCLibMotorController implements MotorController {
     }
 
     public double getCPR(String motorName) {
-        return motors.get(findMotor(motorName)).COUNTS_PER_REV;
+        return motors.get(findMotor(motorName)).getCPR();
     }
 
     public double getCPR(Enum motorName) {
-        return motors.get(findMotor(motorName)).COUNTS_PER_REV;
+        return motors.get(findMotor(motorName)).getCPR();
     }
 }
