@@ -145,7 +145,7 @@ public class ShooterTest extends OpMode {
         }
         ShooterMotorFront = hardwareMap.get(DcMotorEx.class, MotorNames.ShooterMotorFront.name());
         ShooterMotorFront.setMode(USESHOOTERENCODER ? DcMotor.RunMode.RUN_USING_ENCODER : DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        ShooterMotorFront.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidf);
+        ShooterMotorFront.setVelocityPIDFCoefficients(pidf.p, pidf.i, pidf.d, pidf.f);
         if(motorCount == 2) {
             ShooterMotorBack = hardwareMap.get(DcMotorEx.class, MotorNames.ShooterMotorBack.name()); //using single motor design right now
             ShooterMotorBack.setMode(USESHOOTERENCODER ? DcMotor.RunMode.RUN_USING_ENCODER : DcMotor.RunMode.RUN_WITHOUT_ENCODER);
