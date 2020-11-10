@@ -26,7 +26,8 @@ public class WobbleGrabberTest extends OpMode {
         flipperMotor.setTargetPosition(currentPos);
         flipperMotor.setPower(.125);
         flipperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
+        flipperMotor.setVelocityPIDFCoefficients(10, 10, .5, 10);
+        flipperMotor.setPositionPIDFCoefficients(17.5);
         grabberServo = this.hardwareMap.servo.get("grabberServo");
         this.grabberServo.setDirection(Servo.Direction.REVERSE);
     }
@@ -43,6 +44,7 @@ public class WobbleGrabberTest extends OpMode {
             currentPos += increment;
             flipperMotor.setTargetPosition(currentPos);
         } else if(gamepad1.dpad_down && System.currentTimeMillis() - lastPressed > 500) {
+            lastPressed = System.currentTimeMillis();
             currentPos -= increment;
             flipperMotor.setTargetPosition(currentPos);
         }
@@ -50,6 +52,8 @@ public class WobbleGrabberTest extends OpMode {
         telemetry.addData(
                 "currentPos", currentPos
         );
+        telemetry.addData("ServoPos", grabberServo.getPosition());
+        telemetry.addData("Position PIDF", flipperMotor.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION));
 
 
     }
