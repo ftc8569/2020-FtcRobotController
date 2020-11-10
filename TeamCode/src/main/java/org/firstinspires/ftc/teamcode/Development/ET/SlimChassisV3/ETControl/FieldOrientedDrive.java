@@ -27,8 +27,8 @@ public class FieldOrientedDrive {
     DoubleSupplier theta, x, y, r;
     HardwareMap hwm;
     double cx, cy, cr, ct;
-    DriveTrainController obj;
-
+    public DriveTrainController obj;
+    public double[] finalval;
     /**
      * @param dtc A user-defined controller with the functionality to initialize and apply powers to
      *            whatever drivetrain you have.
@@ -43,11 +43,9 @@ public class FieldOrientedDrive {
      * @param r A double supplier that gives rotational speed clockwise. Depending on your scheme
      *          this may be the right stick or the triggers or twist on the stick but I don't think
      *          any FTC controllers support that.
-     * @throws InstantiationException Stuff to be able to pass the controller class.
-     * @throws IllegalAccessException Stuff to be able to pass the controller class.
      */
 
-    public FieldOrientedDrive(Class<? extends DriveTrainController> dtc, HardwareMap hwm, DoubleSupplier theta, DoubleSupplier x, DoubleSupplier y, DoubleSupplier r) throws InstantiationException, IllegalAccessException {
+    public FieldOrientedDrive(Class<? extends DriveTrainController> dtc, HardwareMap hwm, DoubleSupplier theta, DoubleSupplier x, DoubleSupplier y, DoubleSupplier r)  {
         ds = true;
         hw = true;
         this.hwm = hwm;
@@ -55,23 +53,29 @@ public class FieldOrientedDrive {
         this.y = y;
         this.r = r;
         this.theta = theta;
-        DriveTrainController obj = dtc.newInstance();
-        obj.initialize(hwm);
+        try {
+            obj = dtc.newInstance();
+            obj.initialize(hwm);
+        } catch (InstantiationException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
      * @param dtc A user-defined controller with the functionality to initialize and apply powers to
      *            whatever drivetrain you have.
      * @param hwm The hardware Map of the motors you are controlling.
-     * @throws InstantiationException Stuff to be able to pass the controller class.
-     * @throws IllegalAccessException Stuff to be able to pass the controller class.
      */
-    public FieldOrientedDrive(Class<? extends DriveTrainController> dtc, HardwareMap hwm) throws InstantiationException, IllegalAccessException {
+    public FieldOrientedDrive(Class<? extends DriveTrainController> dtc, HardwareMap hwm) {
         ds = false;
         hw = true;
         this.hwm = hwm;
-        obj = dtc.newInstance();
-        obj.initialize(hwm);
+        try {
+            obj = dtc.newInstance();
+            obj.initialize(hwm);
+        } catch (InstantiationException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -107,7 +111,7 @@ public class FieldOrientedDrive {
             throw new UnsupportedOperationException("You must either supply a drivetrain controller or power the motors on your own");
         } else if(!enabled) {
             throw new UnsupportedOperationException("Motor control not enabled. Please call the enable() method.");
-        } else obj.setPowers(calculate(x.getAsDouble(), r.getAsDouble(), y.getAsDouble(), theta.getAsDouble()));
+        } else obj.setPowers(calculate(x.getAsDouble(), y.getAsDouble(), r.getAsDouble(), theta.getAsDouble()));
     }
 
     public void control(double x, double y, double r, double theta) {
@@ -127,14 +131,14 @@ public class FieldOrientedDrive {
     }
 
     public double[] calculate(double x, double y, double r, double theta) {
-        double  temp   = x * Math.cos(Math.toRadians(theta)) - y * Math.sin(Math.toRadians(theta));
-        y  = x * Math.sin(Math.toRadians(theta)) + y * Math.cos(Math.toRadians(theta));
-        x = temp;
+        double  temp   = y * Math.cos(Math.toRadians(theta)) - x * Math.sin(Math.toRadians(theta));
+        x  = y * Math.sin(Math.toRadians(theta)) + x * Math.cos(Math.toRadians(theta));
+        y = temp;
 
-        double frontLeft  = x + y + r;
-        double frontRight = x - y - r;
-        double backLeft   = x - y + r;
-        double backRight  = x + y - r;
+        double frontLeft  = y + x + r;
+        double frontRight = y - x - r;
+        double backLeft   = y - x + r;
+        double backRight  = y + x - r;
 
         double max = Math.abs(frontLeft);
         if(Math.abs(frontRight) > max) max = Math.abs(frontRight);
@@ -147,6 +151,7 @@ public class FieldOrientedDrive {
             backRight  /= max;
             backLeft   /= max;
         }
+        finalval = new double[]{y, x, r};
         return new double[]{frontLeft, frontRight, backLeft, backRight};
     }
 
