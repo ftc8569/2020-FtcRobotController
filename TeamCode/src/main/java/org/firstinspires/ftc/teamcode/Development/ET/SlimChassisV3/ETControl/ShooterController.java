@@ -32,12 +32,16 @@ public class ShooterController {
     }
 
     public void update(boolean shoot) {
-        if (System.currentTimeMillis() - lastFlick < shotInterval / 2)
+        if (System.currentTimeMillis() - lastFlick < shotInterval * .6)
             sc.setServo(ShooterInitializer.position.FORWARD);
-        else if (shoot && Math.abs(sc.getVelocity() / maxVelo) > pow - veloTolerance && Math.abs(sc.getVelocity() / maxVelo) > pow + veloTolerance && System.currentTimeMillis() - lastFlick > shotInterval) {
+        else if (shoot && Math.abs(sc.getVelocity() / maxVelo) > Math.abs(pow) - veloTolerance && Math.abs(sc.getVelocity() / maxVelo) < Math.abs(pow) + veloTolerance && System.currentTimeMillis() - lastFlick > shotInterval) {
             lastFlick = System.currentTimeMillis();
             sc.setServo(ShooterInitializer.position.FORWARD);
-        } else sc.setServo(ShooterInitializer.position.FORWARD);
+        } else sc.setServo(ShooterInitializer.position.BACKWARD);
+    }
+
+    public double getVelocity() {
+        return sc.getVelocity();
     }
 
 

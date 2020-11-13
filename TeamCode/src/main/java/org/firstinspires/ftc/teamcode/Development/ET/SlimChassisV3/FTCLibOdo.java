@@ -63,11 +63,11 @@ public class FTCLibOdo extends OpMode {
     imu.init();
 //    imu.invertGyro();
     imu.reset();
-    le = new Motor(hardwareMap, driveMotorNames.BackLeftMotor.name());
+    le = new Motor(hardwareMap, driveMotorNames.FrontLeftMotor.name());
     le.setDistancePerPulse(DISTANCE_PER_PULSE);
-    re = new Motor(hardwareMap, driveMotorNames.BackRightMotor.name());
+    re = new Motor(hardwareMap, driveMotorNames.FrontRightMotor.name());
     re.setDistancePerPulse(DISTANCE_PER_PULSE);
-    he = new Motor(hardwareMap, driveMotorNames.FrontRightMotor.name());
+    he = new Motor(hardwareMap, driveMotorNames.BackLeftMotor.name());
     he.setDistancePerPulse(DISTANCE_PER_PULSE);
 
 
@@ -76,9 +76,9 @@ public class FTCLibOdo extends OpMode {
     headingConst = imu.getHeading();
     heading = () -> headingConst; // doing this so that it onyl gets updated once per cycle. I am unsure whther or not I2C devices are affected by bulk reads.
 
-    leftEncoder = () -> le.getDistance() * FORWARD_MULTIPLIER * -1;
-    rightEncoder = () -> re.getDistance() * FORWARD_MULTIPLIER;
-    horizontalEncoder = () -> he.getDistance() * RIGHT_MULTIPLIER * -1;
+    leftEncoder = () -> le.getDistance() * FORWARD_MULTIPLIER * 1;
+    rightEncoder = () -> re.getDistance() * FORWARD_MULTIPLIER * 1;
+    horizontalEncoder = () -> he.getDistance() * RIGHT_MULTIPLIER * 1;
     odo = new HolonomicOdometry(leftEncoder, rightEncoder, horizontalEncoder, TRACKWIDTH, CENTER_WHEEL_OFFSET);
 
     djx = () -> gamepad1.left_stick_x;
@@ -111,7 +111,7 @@ public class FTCLibOdo extends OpMode {
 //        fod.obj.setPowers(new double[]{.1,.1,.1,.1});
 //        con.setPowers(.3,.3,.3,.3);
 
-//        telemetry.addData("Right,Horizon,", re.getCurrentPosition() + ", " + he.getCurrentPosition());
+        telemetry.addData("Left,Right,Horizon,", le.getCurrentPosition() + ", " + re.getCurrentPosition() + ", " + he.getCurrentPosition());
 //        codeImStealingFromRoadRunner();
 
 //        telemetry.addData("heading", heading.getAsDouble());
