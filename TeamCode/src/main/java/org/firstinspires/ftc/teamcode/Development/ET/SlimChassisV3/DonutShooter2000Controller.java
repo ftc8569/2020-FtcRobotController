@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.ETControl.ShooterInitializer;
 
 public class DonutShooter2000Controller extends ShooterInitializer {
-    DcMotorEx flywheel;
+    public DcMotorEx flywheel;
     Servo flicker;
 
     public final double
@@ -23,7 +23,7 @@ public class DonutShooter2000Controller extends ShooterInitializer {
         flywheel.setVelocityPIDFCoefficients(10,3,0,0); //defaults
 
         flicker = hw.servo.get("ShooterServo");
-        flicker.setDirection(Servo.Direction.REVERSE);
+//        flicker.setDirection(Servo.Direction.REVERSE);
     }
 
     @Override
