@@ -11,8 +11,8 @@ import java.util.Collections;
 import java.util.Objects;
 
 public class SimpleMotorController implements MotorController {
-    protected ArrayList<String> motorNames = new ArrayList<>();
-    protected ArrayList<DcMotorEx> motors = new ArrayList<>();
+    public ArrayList<String> motorNames = new ArrayList<>();
+    public ArrayList<DcMotorEx> motors = new ArrayList<>();
     HardwareMap hw;
 
     public SimpleMotorController(String[] devicenames, HardwareMap hwm) {

@@ -27,6 +27,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
 
 import org.firstinspires.ftc.teamcode.Development.ET.util.DashboardUtil;
@@ -41,7 +42,9 @@ import static org.firstinspires.ftc.teamcode.Development.ET.drive.DriveConstants
 import static org.firstinspires.ftc.teamcode.Development.ET.drive.DriveConstants.RUN_USING_ENCODER;
 import static org.firstinspires.ftc.teamcode.Development.ET.drive.DriveConstants.TRACK_WIDTH;
 import static org.firstinspires.ftc.teamcode.Development.ET.drive.DriveConstants.encoderTicksToInches;
-import static org.firstinspires.ftc.teamcode.Development.ET.drive.DriveConstants.getMotorVelocityF;
+import static org.firstinspires.ftc.teamcode.Development.ET.drive.DriveConstants.kA;
+import static org.firstinspires.ftc.teamcode.Development.ET.drive.DriveConstants.kStatic;
+import static org.firstinspires.ftc.teamcode.Development.ET.drive.DriveConstants.kV;
 
 /*
  * Simple tank drive hardware implementation for REV hardware.
@@ -51,19 +54,38 @@ public class SampleTankDrive extends TankDrive {
     public static PIDCoefficients AXIAL_PID = new PIDCoefficients(0, 0, 0);
     public static PIDCoefficients CROSS_TRACK_PID = new PIDCoefficients(0, 0, 0);
     public static PIDCoefficients HEADING_PID = new PIDCoefficients(0, 0, 0);
+
+    public static double VX_WEIGHT = 1;
+    public static double VY_WEIGHT = 1;
+    public static double OMEGA_WEIGHT = 1;
+
+    public enum Mode {
+        IDLE,
+        TURN,
+        FOLLOW_TRAJECTORY
+    }
+
     private FtcDashboard dashboard;
     private NanoClock clock;
+
     private Mode mode;
+
     private PIDFController turnController;
     private MotionProfile turnProfile;
     private double turnStart;
+
     private DriveConstraints constraints;
     private TrajectoryFollower follower;
+
     private List<Pose2d> poseHistory;
+
     private List<DcMotorEx> motors, leftMotors, rightMotors;
     private BNO055IMU imu;
+
+    private VoltageSensor batteryVoltageSensor;
+
     public SampleTankDrive(HardwareMap hardwareMap) {
-        super(DriveConstants.kV, DriveConstants.kA, DriveConstants.kStatic, TRACK_WIDTH);
+        super(kV, kA, kStatic, TRACK_WIDTH);
 
         dashboard = FtcDashboard.getInstance();
         dashboard.setTelemetryTransmissionInterval(25);
@@ -82,6 +104,8 @@ public class SampleTankDrive extends TankDrive {
         poseHistory = new ArrayList<>();
 
         LynxModuleUtil.ensureMinimumFirmwareVersion(hardwareMap);
+
+        batteryVoltageSensor = hardwareMap.voltageSensor.iterator().next();
 
         for (LynxModule module : hardwareMap.getAll(LynxModule.class)) {
             module.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
@@ -120,7 +144,7 @@ public class SampleTankDrive extends TankDrive {
         setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         if (RUN_USING_ENCODER && MOTOR_VELO_PID != null) {
-            setPIDCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, MOTOR_VELO_PID);
+            setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, MOTOR_VELO_PID);
         }
 
         // TODO: reverse any motors using DcMotor.setDirection()
@@ -280,17 +304,34 @@ public class SampleTankDrive extends TankDrive {
         }
     }
 
-    public PIDCoefficients getPIDCoefficients(DcMotor.RunMode runMode) {
-        PIDFCoefficients coefficients = leftMotors.get(0).getPIDFCoefficients(runMode);
-        return new PIDCoefficients(coefficients.p, coefficients.i, coefficients.d);
+    public void setPIDFCoefficients(DcMotor.RunMode runMode, PIDFCoefficients coefficients) {
+        PIDFCoefficients compensatedCoefficients = new PIDFCoefficients(
+                coefficients.p, coefficients.i, coefficients.d,
+                coefficients.f * 12 / batteryVoltageSensor.getVoltage()
+        );
+        for (DcMotorEx motor : motors) {
+            motor.setPIDFCoefficients(runMode, compensatedCoefficients);
+        }
     }
 
-    public void setPIDCoefficients(DcMotor.RunMode runMode, PIDCoefficients coefficients) {
-        for (DcMotorEx motor : motors) {
-            motor.setPIDFCoefficients(runMode, new PIDFCoefficients(
-                    coefficients.kP, coefficients.kI, coefficients.kD, getMotorVelocityF()
-            ));
+    public void setWeightedDrivePower(Pose2d drivePower) {
+        Pose2d vel = drivePower;
+
+        if (Math.abs(drivePower.getX()) + Math.abs(drivePower.getY())
+                + Math.abs(drivePower.getHeading()) > 1) {
+            // re-normalize the powers according to the weights
+            double denom = VX_WEIGHT * Math.abs(drivePower.getX())
+                    + VY_WEIGHT * Math.abs(drivePower.getY())
+                    + OMEGA_WEIGHT * Math.abs(drivePower.getHeading());
+
+            vel = new Pose2d(
+                    VX_WEIGHT * drivePower.getX(),
+                    VY_WEIGHT * drivePower.getY(),
+                    OMEGA_WEIGHT * drivePower.getHeading()
+            ).div(denom);
         }
+
+        setDrivePower(vel);
     }
 
     @NonNull
@@ -330,11 +371,5 @@ public class SampleTankDrive extends TankDrive {
     @Override
     public double getRawExternalHeading() {
         return imu.getAngularOrientation().firstAngle;
-    }
-
-    public enum Mode {
-        IDLE,
-        TURN,
-        FOLLOW_TRAJECTORY
     }
 }
