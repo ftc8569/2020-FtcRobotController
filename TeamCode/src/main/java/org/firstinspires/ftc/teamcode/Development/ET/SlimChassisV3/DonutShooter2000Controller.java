@@ -39,6 +39,11 @@ public class DonutShooter2000Controller extends ShooterInitializer {
     }
 
     @Override
+    public void setServo(double position) {
+        flicker.setPosition(position);
+    }
+
+    @Override
     public double getVelocity() {
         return flywheel.getVelocity();
     }
