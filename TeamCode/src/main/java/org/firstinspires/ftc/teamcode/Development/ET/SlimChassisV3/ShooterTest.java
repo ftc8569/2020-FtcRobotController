@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -16,7 +17,8 @@ import com.qualcomm.robotcore.hardware.Servo;
  */
 
 @Config
-@TeleOp(group = "ET")
+@TeleOp(group = "Development", name = "Dev: ShooterTest")
+@Disabled
 public class ShooterTest extends OpMode {
 
 

@@ -35,15 +35,18 @@ public class ScrimmageTeleOp extends OpMode {
 
     long lastPressed = 0, lastPressed2 = 0;
 
+    public static double armOffset = 0,
+            headingOffset = 0;
+
     public static double    grabberOpenPos   =  0,
                             grabberClosedPos =  0.33,
-                            armStartPos = 0,
-                            armUpPos = -183,
-                            armForwardPos = -368,
+                            armStartPos = 0 - armOffset,
+                            armUpPos = -193 - armOffset,
+                            armForwardPos = -390 - armOffset,
                             shooterDefaultPower = -.710;
 
-    public static PIDFCoefficients pidfCoefficients = new PIDFCoefficients(15, 10, .5, 10);
-    public static double pCoefficient = 10;
+    public static PIDFCoefficients pidfCoefficients = new PIDFCoefficients(15, 10, 1, 20);
+    public static double pCoefficient = 15;
 
     public boolean  open = true,
                     spun = false;
@@ -57,7 +60,7 @@ public class ScrimmageTeleOp extends OpMode {
     public void init() {
         imu = new RevIMU(hardwareMap);
         imu.init();
-        heading = () -> imu.getHeading();
+        heading = () -> imu.getHeading() - headingOffset;
 
         fod = new FieldOrientedDrive(SlimChassisV3Controller.class, hardwareMap, heading, djx, djy, dr);
         sc = new ShooterController(DonutShooter2000Controller.class, hardwareMap, .025, 750, 2400);
@@ -91,7 +94,7 @@ public class ScrimmageTeleOp extends OpMode {
 
         sc.update(gamepad1.right_trigger >= .25);
 
-        if(gamepad2.left_trigger >= .5 && System.currentTimeMillis() - lastPressed > 500) {
+        if(gamepad2.left_bumper && System.currentTimeMillis() - lastPressed > 500) {
             lastPressed = System.currentTimeMillis();
             grabberServo.setPosition(open ? grabberClosedPos : grabberOpenPos);
             open = !open;

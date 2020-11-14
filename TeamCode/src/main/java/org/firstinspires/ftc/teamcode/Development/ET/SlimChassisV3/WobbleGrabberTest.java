@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -11,6 +12,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 @Config
 @TeleOp(name = "Dev: WobbleGrabberTest", group = "Development")
+@Disabled
 public class WobbleGrabberTest extends OpMode {
 
     public Servo grabberServo;
