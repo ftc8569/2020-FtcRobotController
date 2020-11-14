@@ -1,14 +1,13 @@
 package org.firstinspires.ftc.teamcode.Development.CR;
 
 
-import android.transition.Fade;
-
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.ejml.dense.row.CommonOps_DDRM;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.teamcode.Development.RingNumberFinderThing;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfDouble;
@@ -16,6 +15,7 @@ import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
@@ -24,16 +24,23 @@ import org.openftc.easyopencv.OpenCvPipeline;
 
 import java.util.ArrayList;
 
-@TeleOp(name = "EasyOpenCV Ring Finder Test", group = "Experimental")
+
+@Config
+@TeleOp(name = "CR-RingFinderTestOpMode", group = "Experimental")
 public class RingFinderTestOpMode extends LinearOpMode
 {
+    public static volatile int HMIN = 60, SMIN = 100, VMIN = 50;
+    public static volatile int HMAX = 120, SMAX = 250, VMAX = 250;
+    public static volatile int NORINGUPPER = 200, ONERINGUPPER = 2000;
+    public static volatile PipelineStages PIPELINESTAGE = PipelineStages.OUTPUTWITHBOUNDINGRECT;
+
     OpenCvCamera webcam;
-    enum HSVModeEnum { HMIN, HMAX, SMIN, SMAX, VMIN, VMAX }
-    HSVModeEnum currentHSVMode = HSVModeEnum.HMIN;
 
     @Override
     public void runOpMode()
     {
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+
         /*
          * Instantiate an OpenCvCamera object for the camera we'll be using.
          * In this sample, we're using a webcam. Note that you will need to
@@ -56,7 +63,10 @@ public class RingFinderTestOpMode extends LinearOpMode
          * (while a streaming session is in flight) *IS* supported.
          */
         RingFinderPipeline pipeline = new RingFinderPipeline();
+        pipeline.PipelineStageToDisplay = PIPELINESTAGE;
         webcam.setPipeline(pipeline);
+
+        FtcDashboard.getInstance().startCameraStream(webcam, 10);
 
         /*
          * Open the connection to the camera device. New in v1.4.0 is the ability
@@ -125,24 +135,25 @@ public class RingFinderTestOpMode extends LinearOpMode
             if(gamepad1.a)
             {
                 // use the gamepad a to cycle the display image
-                switch (pipeline.PipelineStageToDisplay){
+                switch (PIPELINESTAGE){
                     case INPUT:
-                        pipeline.PipelineStageToDisplay = PipelineStages.CONVERT2HSV;
+                        PIPELINESTAGE = PipelineStages.CONVERT2HSV;
                         break;
                     case CONVERT2HSV:
-                        pipeline.PipelineStageToDisplay = PipelineStages.MASKIMAGE;
+                        PIPELINESTAGE = PipelineStages.MASKIMAGE;
                         break;
                     case MASKIMAGE:
-                        pipeline.PipelineStageToDisplay = PipelineStages.BLURIMAGE;
+                        PIPELINESTAGE = PipelineStages.BLURIMAGE;
                         break;
                     case BLURIMAGE:
-                        pipeline.PipelineStageToDisplay = PipelineStages.OUTPUTWITHBOUNDINGRECT;
+                        PIPELINESTAGE = PipelineStages.OUTPUTWITHBOUNDINGRECT;
                         break;
                     case OUTPUTWITHBOUNDINGRECT:
                     default:
-                        pipeline.PipelineStageToDisplay = PipelineStages.INPUT;
+                        PIPELINESTAGE = PipelineStages.INPUT;
                         break;
                 }
+                pipeline.PipelineStageToDisplay = PIPELINESTAGE;
             }
 
             /*
@@ -188,9 +199,15 @@ public class RingFinderTestOpMode extends LinearOpMode
      */
     public class RingFinderPipeline extends OpenCvPipeline
     {
+        private FtcDashboard dashboard;
         boolean viewportPaused;
         // these are set for 320x240 pixels at approx 30 in from camera
-        private final int noRingUpper = 200, oneRingUpper = 2000;
+
+        public  RingFinderPipeline() {
+            super();
+            dashboard = FtcDashboard.getInstance();
+            dashboard.setTelemetryTransmissionInterval(25);
+        }
 
 
         /*
@@ -205,8 +222,8 @@ public class RingFinderTestOpMode extends LinearOpMode
         private Mat maskImage = new Mat();
         private Mat blurImage = new Mat();
         private Rect BoundingRectangle = null;
-        Scalar lowerHSVBound = new Scalar(60,100, 150);
-        Scalar upperHSVBound = new Scalar(120, 250, 250);
+        Scalar lowerHSVBound = new Scalar(HMIN, SMIN, VMIN);
+        Scalar upperHSVBound = new Scalar(HMAX, SMAX, VMAX);
         Scalar measuredLowerHSVBound = lowerHSVBound.clone();
         Scalar measuredUpperHSVBound = upperHSVBound.clone();
 
@@ -235,6 +252,11 @@ public class RingFinderTestOpMode extends LinearOpMode
                 //Rect cropRect = new Rect(83, 1017, 642, 237);
                 //Mat cropImage = input.submat(cropRect);
                 Imgproc.cvtColor(input, hsvImage, Imgproc.COLOR_BGR2HSV);
+
+                // refresh the lower/upper bounds so that this can work via FTC Dashboard
+                lowerHSVBound = new Scalar(HMIN, SMIN, VMIN);
+                upperHSVBound = new Scalar(HMAX, SMAX, VMAX);
+
                 Core.inRange(hsvImage, lowerHSVBound, upperHSVBound, maskImage);
                 Imgproc.medianBlur(maskImage, blurImage, 11);
                 ArrayList<MatOfPoint> contours = new ArrayList<>();
@@ -263,12 +285,18 @@ public class RingFinderTestOpMode extends LinearOpMode
                 }
                 else {
                     measuredArea = BoundingRectangle.width * BoundingRectangle.height;
-                    if(measuredArea <= noRingUpper) RingsDetected = RingDetectionEnum.ZERO;
-                    else if (measuredArea <= oneRingUpper) RingsDetected = RingDetectionEnum.ONE;
+                    if(measuredArea <= RingFinderTestOpMode.NORINGUPPER ) RingsDetected = RingDetectionEnum.ZERO;
+                    else if (measuredArea <= RingFinderTestOpMode.ONERINGUPPER) RingsDetected = RingDetectionEnum.ONE;
                     else RingsDetected = RingDetectionEnum.FOUR;
 
                     // Draw a simple box around the rings
-                    Imgproc.rectangle(input, BoundingRectangle, new Scalar(0, 255, 0), 4);
+                    Scalar rectColor = new Scalar(0, 255, 0);
+                    Imgproc.rectangle(input, BoundingRectangle, rectColor, 4);
+                    int baseline[]={0};
+                    Size textSize = Imgproc.getTextSize(RingsDetected.toString(), Imgproc.FONT_HERSHEY_SIMPLEX, 0.5,2, baseline);
+                    int margin = 2;
+                    Point textOrigin = new Point(BoundingRectangle.x + BoundingRectangle.width/2 - textSize.width/2, BoundingRectangle.y - textSize.height - margin);
+                    Imgproc.putText(input, RingsDetected.toString(), textOrigin, Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, rectColor, 2);
                 }
 
                 switch (PipelineStageToDisplay) {
