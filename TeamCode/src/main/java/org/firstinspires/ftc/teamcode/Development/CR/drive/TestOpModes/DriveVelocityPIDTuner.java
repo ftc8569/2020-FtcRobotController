@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Development.CR.drive;
+package org.firstinspires.ftc.teamcode.Development.CR.drive.TestOpModes;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
@@ -12,13 +12,14 @@ import com.acmerobotics.roadrunner.profile.MotionProfile;
 import com.acmerobotics.roadrunner.profile.MotionProfileGenerator;
 import com.acmerobotics.roadrunner.profile.MotionState;
 import com.acmerobotics.roadrunner.util.NanoClock;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.RobotLog;
 
-import org.firstinspires.ftc.teamcode.Development.CR.CarlMecanumDrive;
-import org.firstinspires.ftc.teamcode.Development.CR.CarlDriveConstants;
+import org.firstinspires.ftc.teamcode.Development.CR.drive.CarlMecanumDrive;
+import org.firstinspires.ftc.teamcode.Development.CR.drive.CarlDriveConstants;
 
 
 import java.util.List;
@@ -35,9 +36,9 @@ import java.util.List;
  * PID coefficients. Once you've found a satisfactory set of gains, add them to your drive class
  * ctor.
  */
-//@Disabled
+@Disabled
 @Config
-@TeleOp(name="CR2 Drive Velocity PID Tuner", group = "Experimental")
+@TeleOp(name="CR2 DriveVelocityPIDTuner", group = "CR-Drive")
 public class DriveVelocityPIDTuner extends LinearOpMode {
     private static final String PID_VAR_NAME = "VELO_PID";
     public static double DISTANCE = 72; // in

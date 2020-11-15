@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Development.CR;
+package org.firstinspires.ftc.teamcode.Development.CR.drive;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.control.PIDCoefficients;
@@ -41,7 +41,7 @@ public class CarlDriveConstants {
      */
     public static double WHEEL_RADIUS = 1.8898; // in
     public static double GEAR_RATIO = 0.5; // output (wheel) speed / input (motor) speed
-    public static double TRACK_WIDTH = 17.33; // in CR changed after track width tuning run
+    public static double TRACK_WIDTH = 17.72; // in CR changed after track width tuning run
 
     /*
      * These are the feedforward parameters used to model the drive motor behavior. If you are using
