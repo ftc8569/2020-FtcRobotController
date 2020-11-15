@@ -6,6 +6,7 @@ package org.firstinspires.ftc.teamcode.Development;
 import android.icu.text.Transliterator;
 import android.provider.ContactsContract;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -29,6 +30,7 @@ import java.util.List;
 
 
 @TeleOp(name = "Dev: RingNumberFinderThing",  group = "Development")
+@Disabled
 public class RingNumberFinderThing extends LinearOpMode
 {
     OpenCvWebcam phoneCam;

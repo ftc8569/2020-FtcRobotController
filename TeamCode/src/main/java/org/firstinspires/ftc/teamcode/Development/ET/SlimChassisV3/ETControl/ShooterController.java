@@ -44,5 +44,9 @@ public class ShooterController {
         return sc.getVelocity();
     }
 
+    public void setServo(ShooterInitializer.position position) {
+        sc.setServo(position);
+    }
+
 
 }

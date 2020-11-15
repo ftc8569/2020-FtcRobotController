@@ -29,6 +29,8 @@ public abstract class ShooterInitializer {
      */
     public abstract void setServo(position position);
 
+    public abstract void setServo(double position);
+
     public abstract double getVelocity();
 
     public enum position {

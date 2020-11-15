@@ -7,6 +7,7 @@ import androidx.annotation.RequiresApi;
 
 import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -19,6 +20,7 @@ import java.util.List;
 
 @RequiresApi(api = Build.VERSION_CODES.O)
 @Autonomous(group = "ET")
+@Disabled
 public class ShooterSensorTest extends LinearOpMode {
 
     Rev2mDistanceSensor dist;
