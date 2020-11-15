@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Development.CR.drive;
+package org.firstinspires.ftc.teamcode.Development.CR.drive.TestOpModes;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.Development.CR.CarlMecanumDrive;
+import org.firstinspires.ftc.teamcode.Development.CR.drive.CarlMecanumDrive;
 
 /**
  * This is a simple teleop routine for testing localization. Drive the robot around like a normal
@@ -17,8 +17,9 @@ import org.firstinspires.ftc.teamcode.Development.CR.CarlMecanumDrive;
  * exercise is to ascertain whether the localizer has been configured properly (note: the pure
  * encoder localizer heading may be significantly off if the track width has not been tuned).
  */
+//@Disabled
 @Config
-@TeleOp(name="CR1 Localization Test", group = "Experimental")
+@TeleOp(name="CR1 LocalizationTest", group = "CR-Drive")
 public class LocalizationTest extends LinearOpMode {
     public static double VX_WEIGHT = 1;
     public static double VY_WEIGHT = 1;
