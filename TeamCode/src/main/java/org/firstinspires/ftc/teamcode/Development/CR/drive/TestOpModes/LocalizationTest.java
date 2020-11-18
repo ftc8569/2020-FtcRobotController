@@ -56,7 +56,6 @@ public class LocalizationTest extends LinearOpMode {
             }
 
             drive.setDrivePower(vel);
-
             drive.update();
 
             Pose2d poseEstimate = drive.getPoseEstimate();

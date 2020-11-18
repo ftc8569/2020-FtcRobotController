@@ -90,3 +90,4 @@ lint/tmp/
 .idea/misc.xml
 .idea/runConfigurations.xml
 .idea/compiler.xml
+.idea/inspectionProfiles/Project_Default.xml
