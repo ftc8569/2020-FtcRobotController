@@ -14,12 +14,41 @@
 // Include common definitions from above.
 apply from: '../build.common.gradle'
 
-repositories {
+ // ********* Added for Chaquopy 9.0 ***********
+ apply plugin: 'com.chaquo.python'
+
+ android {
+     defaultConfig {
+         ndk {
+             abiFilters "armeabi-v7a","x86"
+         }
+         python {
+             buildPython "C:/Users/caryd/anaconda3/envs/rs2-p37/python.exe"
+             pip {
+                install "numpy"
+                // install "pyrealsense2"
+             }
+         }
+     }
+     sourceSets {
+         main {
+             python.srcDir "src/main/java/org/firstinspires/ftc/teamcode/Development/CR/python"
+         }
+     }
+ }
+ // ********* Added for Chaquopy 9.0 ***********
+
+ repositories {
     maven { url = "https://dl.bintray.com/first-tech-challenge/ftcsdk/" }
+//    maven { url "https://maven.0x778.tk" }
+//    maven { url "https://dl.bintray.com/intel-realsense/librealsense" }
 }
 
 dependencies {
     annotationProcessor files('lib/OpModeAnnotationProcessor.jar')
     implementation 'org.openftc:easyopencv:1.4.1'
     implementation 'com.arcrobotics:ftclib:1.1.3' // current version
+//    implementation 'com.spartronics4915.lib:ftc265:2.1.0'
+//    implementation 'com.intel.realsense:librealsense:2.18.0@aar'
 }
+
