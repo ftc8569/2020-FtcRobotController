@@ -15,7 +15,7 @@
 apply from: '../build.common.gradle'
 
  // ********* Added for Chaquopy 9.0 ***********
- apply plugin: 'com.chaquo.python'
+/* apply plugin: 'com.chaquo.python'
 
  android {
      defaultConfig {
@@ -35,7 +35,7 @@ apply from: '../build.common.gradle'
              python.srcDir "src/main/java/org/firstinspires/ftc/teamcode/Development/CR/python"
          }
      }
- }
+ }*/
  // ********* Added for Chaquopy 9.0 ***********
 
  repositories {

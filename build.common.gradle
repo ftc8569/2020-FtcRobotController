@@ -23,8 +23,6 @@ android {
 
     compileSdkVersion 30
 
-   
-
     signingConfigs {
         debug {
             keyAlias 'androiddebugkey'
