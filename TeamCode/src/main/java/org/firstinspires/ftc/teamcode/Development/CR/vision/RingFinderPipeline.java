@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.Development.CR.vision;
 import com.acmerobotics.dashboard.FtcDashboard;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.firstinspires.ftc.teamcode.Development.CR.vision.TestOpModes.RingFinderTestOpMode;
 import org.jetbrains.annotations.NotNull;
 import org.opencv.core.Core;
@@ -13,9 +14,13 @@ import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvPipeline;
+
+import java.io.File;
+import java.nio.file.LinkPermission;
 import java.util.ArrayList;
 
 /*
@@ -45,16 +50,19 @@ public class RingFinderPipeline extends OpenCvPipeline
     private FtcDashboard dashboard;
     private OpenCvCamera webcam;
     private Telemetry telemetry;
+    private Mat inputImageBGR = new Mat();
     private Mat hsvImage = new Mat();
     private Mat maskImage = new Mat();
     private Mat blurImage = new Mat();
+    private Mat outputImageBGR = new Mat();
+    private Mat outputImageRBG = new Mat();
     private Rect BoundingRectangle = null;
-    public HSVValues hsvLowerBound = new HSVValues(60,  100,  50);
-    public HSVValues hsvUpperBound = new HSVValues( 120,  250,  250);
+    public HSVValues hsvLowerBound = new HSVValues(5,  100,  0);
+    public HSVValues hsvUpperBound = new HSVValues( 25,  255,  255);
 
     // Volatile since accessed by OpMode thread w/o synchronization
     public volatile RingDetectionEnum RingsDetected = RingDetectionEnum.UNKNOWN;
-    public volatile PipelineStages PipelineStageToDisplay = PipelineStages.OUTPUTWITHBOUNDINGRECT;
+    public volatile PipelineStages pipelineStageToDisplay = PipelineStages.INPUT;
     public volatile int measuredArea = 0;
     public volatile Point centerOFTarget = null;
 
@@ -62,10 +70,14 @@ public class RingFinderPipeline extends OpenCvPipeline
     public Mat processFrame(Mat input)
     {
         try {
+
+            Imgproc.cvtColor(input, inputImageBGR, Imgproc.COLOR_RGB2BGR);
+            inputImageBGR.copyTo(outputImageBGR);
+
             // Here we could possible crop the image to speed processing.  If we do, we need to do so in the init as well
             //Rect cropRect = new Rect(83, 1017, 642, 237);
             //Mat cropImage = input.submat(cropRect);
-            Imgproc.cvtColor(input, hsvImage, Imgproc.COLOR_BGR2HSV);
+            Imgproc.cvtColor(inputImageBGR, hsvImage, Imgproc.COLOR_BGR2HSV);
 
             // refresh the lower/upper bounds so that this can work via FTC Dashboard
             Scalar lowerHSVBound = new Scalar(hsvLowerBound.Hue, hsvLowerBound.Saturation, hsvLowerBound.Value);
@@ -112,15 +124,15 @@ public class RingFinderPipeline extends OpenCvPipeline
 
                 // Draw a simple box around the rings
                 Scalar rectColor = new Scalar(0, 255, 0);
-                Imgproc.rectangle(input, BoundingRectangle, rectColor, 4);
+                Imgproc.rectangle(outputImageBGR, BoundingRectangle, rectColor, 4);
                 int baseline[]={0};
                 Size textSize = Imgproc.getTextSize(RingsDetected.toString(), Imgproc.FONT_HERSHEY_SIMPLEX, 0.5,2, baseline);
                 int margin = 2;
                 Point textOrigin = new Point(BoundingRectangle.x + BoundingRectangle.width/2 - textSize.width/2, BoundingRectangle.y - textSize.height - margin);
-                Imgproc.putText(input, RingsDetected.toString(), textOrigin, Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, rectColor, 2);
+                Imgproc.putText(outputImageBGR, RingsDetected.toString(), textOrigin, Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, rectColor, 2);
             }
 
-            switch (PipelineStageToDisplay) {
+            switch (pipelineStageToDisplay) {
                 case MASKIMAGE:
                     return  maskImage;
                 case BLURIMAGE:
@@ -152,10 +164,13 @@ public class RingFinderPipeline extends OpenCvPipeline
                     }
 
                     // HSVSampleMetrics = String.format("hsv mean (%d, %d,%d), std (%d, %d,%d)", hsvMean[0] , hsvMean[1], hsvMean[2], hsvStd[0], hsvStd[1], hsvStd[2]);
-                    telemetry.addData("HSV Mean", String.format("(%d, %d,%d)", hsvMean[0] , hsvMean[1], hsvMean[2]));
-                    telemetry.addData("HSV StdDev", String.format("(%d, %d,%d)", hsvStd[0], hsvStd[1], hsvStd[2]));
+                    //telemetry.addData("HSV Mean", String.format("(%d, %d,%d)", hsvMean[0] , hsvMean[1], hsvMean[2]));
+                    //telemetry.addData("HSV StdDev", String.format("(%d, %d,%d)", hsvStd[0], hsvStd[1], hsvStd[2]));
                     return hsvImage;
                 case OUTPUTWITHBOUNDINGRECT:
+                    // we need to return an RGB image
+                    Imgproc.cvtColor(outputImageBGR, outputImageRBG, Imgproc.COLOR_BGR2RGB);
+                    return outputImageRBG;
                 case INPUT:
                 default:
                     return input;
@@ -165,4 +180,47 @@ public class RingFinderPipeline extends OpenCvPipeline
             throw ex;
         }
     }
+
+    private int captureCounter = 0;
+    public String CaptureImage(){
+        Mat image2Save;
+        String fullFileName = String.format("ring-"+ pipelineStageToDisplay.toString().toLowerCase()+"-%d.png",captureCounter++);
+        switch (pipelineStageToDisplay) {
+            case MASKIMAGE:
+                image2Save = maskImage;
+                break;
+            case CONVERT2HSV:
+                image2Save = hsvImage;
+                break;
+            case BLURIMAGE:
+                image2Save = blurImage;
+                break;
+            case OUTPUTWITHBOUNDINGRECT:
+                image2Save = outputImageBGR;
+                break;
+            case INPUT:
+            default:
+                image2Save = inputImageBGR;
+                break;
+        }
+
+        if(null != image2Save)
+            if (saveOpenCvImageToFile(fullFileName, image2Save))
+                return fullFileName;
+        return "not saved";
+}
+
+    public static final File VISION_FOLDER =
+            new File(AppUtil.ROOT_FOLDER + "/vision/");
+    private boolean saveOpenCvImageToFile(String filename, Mat mat) {
+
+        Mat mIntermediateMat = new Mat();
+        Imgproc.cvtColor(mat, mIntermediateMat, Imgproc.COLOR_BGR2RGB, 3);
+
+        boolean mkdirs = VISION_FOLDER.mkdirs();
+        File file = new File(VISION_FOLDER, filename);
+        boolean savedSuccessfully = Imgcodecs.imwrite(file.toString(), mat);
+        return  savedSuccessfully;
+    }
+
 }

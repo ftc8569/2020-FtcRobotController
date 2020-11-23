@@ -124,7 +124,8 @@ public class CarlMecanumDrive extends MecanumDrive {
 
         // TODO: if desired, use setLocalizer() to change the localization method
         // for instance, setLocalizer(new ThreeTrackingWheelLocalizer(...));
-        // setLocalizer(new IntelT265Localizer(hardwareMap, (MecanumLocalizer) getLocalizer()));
+        // setLocalizer(new VuforiaMecanumLocalizer(hardwareMap, (MecanumLocalizer) getLocalizer()));
+
     }
 
     public TrajectoryBuilder trajectoryBuilder(Pose2d startPose) {

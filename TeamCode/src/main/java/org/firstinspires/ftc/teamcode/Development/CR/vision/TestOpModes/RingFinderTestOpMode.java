@@ -19,8 +19,8 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 @Config
 @TeleOp(name = "CR-RingFinderTestOpMode", group = "Experimental")
 public class RingFinderTestOpMode extends LinearOpMode {
-    public static volatile HSVValues LOWERHSVBOUND = new HSVValues(60,  100,  50);
-    public static volatile HSVValues UPPERHSVBOUND =new HSVValues( 120,  250,  250);
+    public static volatile HSVValues LOWERHSVBOUND = new HSVValues(5,  100,  0);
+    public static volatile HSVValues UPPERHSVBOUND =new HSVValues( 25,  255,  255);
     public static volatile int NORINGUPPER = 200, ONERINGUPPER = 2000;
     public static volatile PipelineStages PIPELINESTAGE = PipelineStages.OUTPUTWITHBOUNDINGRECT;
 
@@ -53,7 +53,7 @@ public class RingFinderTestOpMode extends LinearOpMode {
          * (while a streaming session is in flight) *IS* supported.
          */
         RingFinderPipeline pipeline = new RingFinderPipeline(webcam, telemetry);
-        pipeline.PipelineStageToDisplay = PIPELINESTAGE;
+        pipeline.pipelineStageToDisplay = PIPELINESTAGE;
         webcam.setPipeline(pipeline);
 
         // show the raw camera stream on the dashboard
@@ -98,6 +98,7 @@ public class RingFinderTestOpMode extends LinearOpMode {
          * Wait for the user to press start on the Driver Station
          */
         waitForStart();
+        String lastCaptureFile = "none";
 
         while (opModeIsActive()) {
             /*
@@ -110,8 +111,10 @@ public class RingFinderTestOpMode extends LinearOpMode {
             telemetry.addData("Overhead time ms", webcam.getOverheadTimeMs());
             telemetry.addData("Theoretical max FPS", webcam.getCurrentPipelineMaxFps());
             telemetry.addData("Rings", pipeline.RingsDetected.toString());
-            telemetry.addData("Display", pipeline.PipelineStageToDisplay.toString());
+            telemetry.addData("Display", pipeline.pipelineStageToDisplay.toString());
             telemetry.addData("measuredArea", pipeline.measuredArea);
+            telemetry.addData("pipelineStageToDisplay", pipeline.pipelineStageToDisplay.toString());
+            telemetry.addData("file", lastCaptureFile);
             telemetry.update();
 
             /*
@@ -140,11 +143,15 @@ public class RingFinderTestOpMode extends LinearOpMode {
                         break;
                 }
 
-                // update all of these so that the FTC Dashboard Config value changes will propagate while running
-                pipeline.hsvLowerBound = LOWERHSVBOUND;
-                pipeline.hsvUpperBound  = UPPERHSVBOUND;
-                pipeline.PipelineStageToDisplay = PIPELINESTAGE;
             }
+
+            if(gamepad1.x)
+                lastCaptureFile =  pipeline.CaptureImage();
+
+            // update all of these so that the FTC Dashboard Config value changes will propagate while running
+            pipeline.hsvLowerBound = LOWERHSVBOUND;
+            pipeline.hsvUpperBound  = UPPERHSVBOUND;
+            pipeline.pipelineStageToDisplay = PIPELINESTAGE;
 
             /*
              * For the purposes of this sample, throttle ourselves to 10Hz loop to avoid burning
