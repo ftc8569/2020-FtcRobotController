@@ -21,12 +21,13 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 @Config
 @TeleOp(name = "CR-PanTiltTestOpMode", group = "CR-PanTilt")
 public class PanTiltTestOpMode extends LinearOpMode {
-    public static PIDCoefficients PAN_PID = new PIDCoefficients(-0.075, 0, 0);
-    public static PIDCoefficients TILT_PID = new PIDCoefficients(-0.075, 0, 0);
+    public static PIDCoefficients PAN_PID = new PIDCoefficients(-0.04, 0, 0);
+    public static PIDCoefficients TILT_PID = new PIDCoefficients(-0.04, 0, 0);
     public static double DEADBANDRADIUS = 10;
 
     OpenCvCamera webcam;
     PanTiltContoller panTiltContoller;
+
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -112,6 +113,12 @@ public class PanTiltTestOpMode extends LinearOpMode {
                 if(gamepad1.dpad_right) panAngle += 1;
                 if(gamepad1.dpad_left) panAngle -= 1;
                 panTiltContoller.setPosition(panAngle, tiltAngle);
+            }
+
+            if(gamepad1.a) {
+                String fileLocation =  pipeline.CaptureImage();
+                telemetry.addData("file", fileLocation);
+
             }
 
             telemetry.addData("usePID", usePID);
