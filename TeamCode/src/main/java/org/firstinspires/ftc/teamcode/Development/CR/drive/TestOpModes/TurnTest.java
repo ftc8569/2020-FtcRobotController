@@ -10,7 +10,7 @@ import org.firstinspires.ftc.teamcode.Development.CR.drive.CarlMecanumDrive;
 /*
  * This is a simple routine to test turning capabilities.
  */
-@Disabled
+//@Disabled
 @Config
 @Autonomous(name="CR5 TurnTest", group = "CR-Drive")
 public class TurnTest extends LinearOpMode {

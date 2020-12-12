@@ -31,6 +31,7 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
 
 import org.firstinspires.ftc.teamcode.Development.ET.util.DashboardUtil;
+import org.firstinspires.ftc.teamcode.Development.ET.util.Encoder;
 import org.firstinspires.ftc.teamcode.Development.ET.util.LynxModuleUtil;
 
 import java.util.ArrayList;
@@ -41,9 +42,12 @@ import java.util.List;
  * Simple mecanum drive hardware implementation for REV hardware.
  */
 @Config
-public class CarlMecanumDrive extends MecanumDrive {
+public class CarlMecanumDrive extends MecanumDrive implements IHeadingProvider {
     public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(5, 0, 0);
-    public static PIDCoefficients HEADING_PID = new PIDCoefficients(5, 0, 0);
+    public static PIDCoefficients HEADING_PID = new PIDCoefficients(10, 0.1, 0.1);
+    public static double FOLLOWER_TIMEOUT = 0.5;
+    public static double FOLLOWER_HEADING_TOLERANCE = Math.toRadians(0.5);
+    public static double FOLLOWER_POSITION_TOLERANCE = 0.25;
 
     public static double LATERAL_MULTIPLIER = 1;
     private FtcDashboard dashboard;
@@ -59,6 +63,7 @@ public class CarlMecanumDrive extends MecanumDrive {
     private List<DcMotorEx> motors;
     private BNO055IMU imu;
     private Pose2d lastPoseOnTurn;
+    public MecanumLocalizer mecanumLocalizer;
 
     public CarlMecanumDrive(HardwareMap hardwareMap) {
         super(CarlDriveConstants.kV, CarlDriveConstants.kA, CarlDriveConstants.kStatic, CarlDriveConstants.TRACK_WIDTH, CarlDriveConstants.TRACK_WIDTH, LATERAL_MULTIPLIER);
@@ -67,7 +72,6 @@ public class CarlMecanumDrive extends MecanumDrive {
         dashboard.setTelemetryTransmissionInterval(25);
 
         clock = NanoClock.system();
-
         mode = Mode.IDLE;
 
         turnController = new PIDFController(HEADING_PID);
@@ -75,7 +79,7 @@ public class CarlMecanumDrive extends MecanumDrive {
 
         constraints = new MecanumConstraints(CarlDriveConstants.BASE_CONSTRAINTS, CarlDriveConstants.TRACK_WIDTH);
         follower = new HolonomicPIDVAFollower(TRANSLATIONAL_PID, TRANSLATIONAL_PID, HEADING_PID,
-                new Pose2d(0.5, 0.5, Math.toRadians(5.0)), 0.5);
+                new Pose2d(FOLLOWER_POSITION_TOLERANCE, FOLLOWER_POSITION_TOLERANCE, FOLLOWER_HEADING_TOLERANCE), FOLLOWER_TIMEOUT);
 
         poseHistory = new ArrayList<>();
 
@@ -95,10 +99,10 @@ public class CarlMecanumDrive extends MecanumDrive {
         // upward (normal to the floor) using a command like the following:
         // BNO055IMUUtil.remapAxes(imu, AxesOrder.XYZ, AxesSigns.NPN);
 
-        leftFront = hardwareMap.get(DcMotorEx.class, "FrontLeftMotor");
-        leftRear = hardwareMap.get(DcMotorEx.class, "BackLeftMotor");
-        rightRear = hardwareMap.get(DcMotorEx.class, "BackRightMotor");
-        rightFront = hardwareMap.get(DcMotorEx.class, "FrontRightMotor");
+        leftFront = hardwareMap.get(DcMotorEx.class, "frontLeftMotor");
+        leftRear = hardwareMap.get(DcMotorEx.class, "backLeftMotor");
+        rightRear = hardwareMap.get(DcMotorEx.class, "backRightMotor");
+        rightFront = hardwareMap.get(DcMotorEx.class, "frontRightMotor");
 
         motors = Arrays.asList(leftFront, leftRear, rightRear, rightFront);
 
@@ -124,7 +128,15 @@ public class CarlMecanumDrive extends MecanumDrive {
 
         // TODO: if desired, use setLocalizer() to change the localization method
         // for instance, setLocalizer(new ThreeTrackingWheelLocalizer(...));
-        // setLocalizer(new VuforiaMecanumLocalizer(hardwareMap, (MecanumLocalizer) getLocalizer()));
+        // dimensions are relative to robot coordinates and heading is in radians
+        OdometryPod leftPod = new OdometryPod(hardwareMap,"leftOdoEncoder", new Pose2d(0.8, 7.5, 0.0 )),
+                    rightPod = new OdometryPod(hardwareMap,"rightOdoEncoder", new Pose2d(0.8, -7.5, 0.0 )),
+                    frontPod = new OdometryPod(hardwareMap,"frontOdoEncoder", new Pose2d(8.5, 0.8, Math.toRadians(90.0)) );
+        rightPod.getEncoder().setDirection(Encoder.Direction.REVERSE);
+
+        mecanumLocalizer = (MecanumLocalizer) getLocalizer();
+        //setLocalizer(new ThreeWheelTrackingLocalizer(leftPod, rightPod, frontPod));
+        //setLocalizer(new TwoWheelTrackingLocalizer(leftPod, frontPod, this));
 
     }
 
@@ -220,18 +232,15 @@ public class CarlMecanumDrive extends MecanumDrive {
 
                 double targetOmega = targetState.getV();
                 double targetAlpha = targetState.getA();
-                setDriveSignal(new DriveSignal(new Pose2d(
-                        0, 0, targetOmega + correction
-                ), new Pose2d(
-                        0, 0, targetAlpha
-                )));
+                setDriveSignal(new DriveSignal(new Pose2d(0, 0, targetOmega + correction), new Pose2d(0, 0, targetAlpha)));
 
                 Pose2d newPose = lastPoseOnTurn.copy(lastPoseOnTurn.getX(), lastPoseOnTurn.getY(), targetState.getX());
 
                 fieldOverlay.setStroke("#4CAF50");
                 DashboardUtil.drawRobot(fieldOverlay, newPose);
 
-                if (t >= turnProfile.duration()) {
+                double overallHeadingError = Math.abs(targetState.getX() - currentPose.getHeading());
+                if ((overallHeadingError <= FOLLOWER_HEADING_TOLERANCE && t >= turnProfile.duration()) || (t >= turnProfile.duration() + FOLLOWER_TIMEOUT)) {
                     mode = Mode.IDLE;
                     setDriveSignal(new DriveSignal());
                 }
