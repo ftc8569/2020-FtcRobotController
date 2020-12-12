@@ -12,11 +12,11 @@ import org.firstinspires.ftc.teamcode.Development.CR.drive.CarlMecanumDrive;
 /*
  * This is a simple routine to test translational drive capabilities.
  */
-@Disabled
+//@Disabled
 @Config
 @Autonomous(name="CR3 StraightTest", group = "CR-Drive")
 public class StraightTest extends LinearOpMode {
-    public static double DISTANCE = 60; // in
+    public static double DISTANCE = 20; // in
 
     @Override
     public void runOpMode() throws InterruptedException {

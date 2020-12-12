@@ -24,7 +24,7 @@ import org.firstinspires.ftc.teamcode.Development.CR.drive.CarlDriveConstants;
  * accurate track width estimate is important or else the angular constraints will be thrown off.
  */
 
-@Disabled
+//@Disabled
 @Config
 @Autonomous(name="CR4 TrackWidthTuner", group = "CR-Drive")
 public class TrackWidthTuner extends LinearOpMode {

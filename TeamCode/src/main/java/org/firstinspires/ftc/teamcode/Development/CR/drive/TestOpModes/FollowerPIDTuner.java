@@ -13,11 +13,11 @@ import org.firstinspires.ftc.teamcode.Development.CR.drive.CarlMecanumDrive;
  * Op mode for tuning follower PID coefficients (located in the drive base classes). The robot
  * drives in a DISTANCE-by-DISTANCE square indefinitely.
  */
-@Disabled
+//@Disabled
 @Config
 @Autonomous(name="CR7 Follower PID Tuner", group = "Experimental")
 public class FollowerPIDTuner extends LinearOpMode {
-    public static double DISTANCE = 48; // in
+    public static double DISTANCE = 12; // in
 
     @Override
     public void runOpMode() throws InterruptedException {

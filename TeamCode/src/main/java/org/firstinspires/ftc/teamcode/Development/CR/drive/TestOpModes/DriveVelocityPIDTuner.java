@@ -36,12 +36,12 @@ import java.util.List;
  * PID coefficients. Once you've found a satisfactory set of gains, add them to your drive class
  * ctor.
  */
-@Disabled
+//@Disabled
 @Config
 @TeleOp(name="CR2 DriveVelocityPIDTuner", group = "CR-Drive")
 public class DriveVelocityPIDTuner extends LinearOpMode {
     private static final String PID_VAR_NAME = "VELO_PID";
-    public static double DISTANCE = 72; // in
+    public static double DISTANCE = 12; // in
     private FtcDashboard dashboard = FtcDashboard.getInstance();
     private String catName;
     private CustomVariable catVar;
