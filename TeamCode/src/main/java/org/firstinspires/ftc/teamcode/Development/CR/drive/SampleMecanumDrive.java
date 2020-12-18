@@ -25,14 +25,12 @@ import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
 
 import org.firstinspires.ftc.teamcode.Development.CR.util.DashboardUtil;
-import org.firstinspires.ftc.teamcode.Development.CR.util.Encoder;
 import org.firstinspires.ftc.teamcode.Development.CR.util.LynxModuleUtil;
 
 import java.util.ArrayList;
@@ -40,13 +38,14 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+
 /*
  * Simple mecanum drive hardware implementation for REV hardware.
  */
 @Config
-public class CarlMecanumDrive extends MecanumDrive implements IHeadingProvider {
-    public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(5, 0, 0);
-    public static PIDCoefficients HEADING_PID = new PIDCoefficients(5, 0, 0.05);
+public class SampleMecanumDrive extends MecanumDrive {
+    public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(0, 0, 0);
+    public static PIDCoefficients HEADING_PID = new PIDCoefficients(0, 0, 0);
 
     public static double LATERAL_MULTIPLIER = 1;
 
@@ -56,10 +55,6 @@ public class CarlMecanumDrive extends MecanumDrive implements IHeadingProvider {
 
     public static int POSE_HISTORY_LIMIT = 100;
 
-    public static double FOLLOWER_TIMEOUT = 0.5;
-    public static double FOLLOWER_HEADING_TOLERANCE = Math.toRadians(0.5);
-    public static double FOLLOWER_POSITION_TOLERANCE = 0.25;
-
     public enum Mode {
         IDLE,
         TURN,
@@ -68,28 +63,34 @@ public class CarlMecanumDrive extends MecanumDrive implements IHeadingProvider {
 
     private FtcDashboard dashboard;
     private NanoClock clock;
+
     private Mode mode;
+
     private PIDFController turnController;
     private MotionProfile turnProfile;
     private double turnStart;
+
     private DriveConstraints constraints;
     private TrajectoryFollower follower;
+
     private LinkedList<Pose2d> poseHistory;
+
     private DcMotorEx leftFront, leftRear, rightRear, rightFront;
     private List<DcMotorEx> motors;
     private BNO055IMU imu;
+
     private VoltageSensor batteryVoltageSensor;
+
     private Pose2d lastPoseOnTurn;
 
-    public MecanumLocalizer mecanumLocalizer;
-
-    public CarlMecanumDrive(HardwareMap hardwareMap) {
+    public SampleMecanumDrive(HardwareMap hardwareMap) {
         super(CarlDriveConstants.kV, CarlDriveConstants.kA, CarlDriveConstants.kStatic, CarlDriveConstants.TRACK_WIDTH, CarlDriveConstants.TRACK_WIDTH, LATERAL_MULTIPLIER);
 
         dashboard = FtcDashboard.getInstance();
         dashboard.setTelemetryTransmissionInterval(25);
 
         clock = NanoClock.system();
+
         mode = Mode.IDLE;
 
         turnController = new PIDFController(HEADING_PID);
@@ -97,7 +98,7 @@ public class CarlMecanumDrive extends MecanumDrive implements IHeadingProvider {
 
         constraints = new MecanumConstraints(CarlDriveConstants.BASE_CONSTRAINTS, CarlDriveConstants.TRACK_WIDTH);
         follower = new HolonomicPIDVAFollower(TRANSLATIONAL_PID, TRANSLATIONAL_PID, HEADING_PID,
-                new Pose2d(FOLLOWER_POSITION_TOLERANCE, FOLLOWER_POSITION_TOLERANCE, FOLLOWER_HEADING_TOLERANCE), FOLLOWER_TIMEOUT);
+                new Pose2d(0.5, 0.5, Math.toRadians(5.0)), 0.5);
 
         poseHistory = new LinkedList<>();
 
@@ -119,10 +120,10 @@ public class CarlMecanumDrive extends MecanumDrive implements IHeadingProvider {
         // upward (normal to the floor) using a command like the following:
         // BNO055IMUUtil.remapAxes(imu, AxesOrder.XYZ, AxesSigns.NPN);
 
-        leftFront = hardwareMap.get(DcMotorEx.class, "frontLeftMotor");
-        leftRear = hardwareMap.get(DcMotorEx.class, "backLeftMotor");
-        rightRear = hardwareMap.get(DcMotorEx.class, "backRightMotor");
-        rightFront = hardwareMap.get(DcMotorEx.class, "frontRightMotor");
+        leftFront = hardwareMap.get(DcMotorEx.class, "leftFront");
+        leftRear = hardwareMap.get(DcMotorEx.class, "leftRear");
+        rightRear = hardwareMap.get(DcMotorEx.class, "rightRear");
+        rightFront = hardwareMap.get(DcMotorEx.class, "rightFront");
 
         motors = Arrays.asList(leftFront, leftRear, rightRear, rightFront);
 
@@ -143,20 +144,9 @@ public class CarlMecanumDrive extends MecanumDrive implements IHeadingProvider {
         }
 
         // TODO: reverse any motors using DcMotor.setDirection()
-        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
-        leftRear.setDirection(DcMotorSimple.Direction.REVERSE);
 
         // TODO: if desired, use setLocalizer() to change the localization method
         // for instance, setLocalizer(new ThreeTrackingWheelLocalizer(...));
-        // dimensions are relative to robot coordinates and heading is in radians
-        OdometryPod leftPod = new OdometryPod(hardwareMap,"leftOdoEncoder", new Pose2d(0.8, 7.5, 0.0 )),
-                    rightPod = new OdometryPod(hardwareMap,"rightOdoEncoder", new Pose2d(0.8, -7.5, 0.0 ), Encoder.Direction.REVERSE),
-                    frontPod = new OdometryPod(hardwareMap,"frontOdoEncoder", new Pose2d(8.5, 0.8, Math.toRadians(90.0)), Encoder.Direction.REVERSE);
-
-        mecanumLocalizer = (MecanumLocalizer) getLocalizer();
-        setLocalizer(new ThreeWheelTrackingLocalizer(leftPod, rightPod, frontPod));
-        //setLocalizer(new TwoWheelTrackingLocalizer(leftPod, frontPod, this));
-
     }
 
     public TrajectoryBuilder trajectoryBuilder(Pose2d startPose) {
@@ -222,6 +212,7 @@ public class CarlMecanumDrive extends MecanumDrive implements IHeadingProvider {
         Pose2d lastError = getLastError();
 
         poseHistory.add(currentPose);
+
         if (POSE_HISTORY_LIMIT > -1 && poseHistory.size() > POSE_HISTORY_LIMIT) {
             poseHistory.removeFirst();
         }
@@ -254,17 +245,18 @@ public class CarlMecanumDrive extends MecanumDrive implements IHeadingProvider {
 
                 double targetOmega = targetState.getV();
                 double targetAlpha = targetState.getA();
-                setDriveSignal(new DriveSignal(new Pose2d(0, 0, targetOmega + correction), new Pose2d(0, 0, targetAlpha)));
+                setDriveSignal(new DriveSignal(new Pose2d(
+                        0, 0, targetOmega + correction
+                ), new Pose2d(
+                        0, 0, targetAlpha
+                )));
 
                 Pose2d newPose = lastPoseOnTurn.copy(lastPoseOnTurn.getX(), lastPoseOnTurn.getY(), targetState.getX());
 
                 fieldOverlay.setStroke("#4CAF50");
                 DashboardUtil.drawRobot(fieldOverlay, newPose);
 
-                // Changed by CR to make this behave more like the trajectory follower.  It seemed that this was not giving the
-                // turnController time for the PID to settle.
-                double overallHeadingError = Math.abs(targetState.getX() - currentPose.getHeading());
-                if ((overallHeadingError <= FOLLOWER_HEADING_TOLERANCE && t >= turnProfile.duration()) || (t >= turnProfile.duration() + FOLLOWER_TIMEOUT)) {
+                if (t >= turnProfile.duration()) {
                     mode = Mode.IDLE;
                     setDriveSignal(new DriveSignal());
                 }
@@ -351,6 +343,7 @@ public class CarlMecanumDrive extends MecanumDrive implements IHeadingProvider {
 
         setDrivePower(vel);
     }
+
     @NonNull
     @Override
     public List<Double> getWheelPositions() {
@@ -361,6 +354,7 @@ public class CarlMecanumDrive extends MecanumDrive implements IHeadingProvider {
         return wheelPositions;
     }
 
+    @Override
     public List<Double> getWheelVelocities() {
         List<Double> wheelVelocities = new ArrayList<>();
         for (DcMotorEx motor : motors) {
@@ -381,6 +375,4 @@ public class CarlMecanumDrive extends MecanumDrive implements IHeadingProvider {
     public double getRawExternalHeading() {
         return imu.getAngularOrientation().firstAngle;
     }
-
-
 }

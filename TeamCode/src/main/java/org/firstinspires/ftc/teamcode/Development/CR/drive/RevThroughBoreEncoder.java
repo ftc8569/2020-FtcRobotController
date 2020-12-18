@@ -4,7 +4,7 @@ import com.acmerobotics.roadrunner.util.NanoClock;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
-import org.firstinspires.ftc.teamcode.Development.ET.util.Encoder;
+import org.firstinspires.ftc.teamcode.Development.CR.util.Encoder;
 
 public class RevThroughBoreEncoder extends Encoder {
     public static final double TICKS_PER_REV = 8192;

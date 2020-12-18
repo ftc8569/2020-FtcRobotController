@@ -16,7 +16,7 @@ import org.firstinspires.ftc.teamcode.Development.CR.drive.CarlMecanumDrive;
 import org.firstinspires.ftc.teamcode.Development.CR.drive.OdometryPod;
 import org.firstinspires.ftc.teamcode.Development.CR.drive.ThreeWheelTrackingLocalizer;
 import org.firstinspires.ftc.teamcode.Development.CR.drive.TwoWheelTrackingLocalizer;
-import org.firstinspires.ftc.teamcode.Development.ET.util.Encoder;
+import org.firstinspires.ftc.teamcode.Development.CR.util.Encoder;
 
 @TeleOp(name="CR1 RevEncoderTestOpMode")
 public class RevEncoderTestOpMode extends LinearOpMode {
@@ -47,9 +47,8 @@ public class RevEncoderTestOpMode extends LinearOpMode {
 
         // dimensions are relative to robot coordinates and heading is in radians
         OdometryPod leftPod = new OdometryPod(hardwareMap,"leftOdoEncoder", new Pose2d(0.8, 7.5, 0.0 )),
-                    rightPod = new OdometryPod(hardwareMap,"rightOdoEncoder", new Pose2d(0.8, -7.5, 0.0 )),
-                    frontPod = new OdometryPod(hardwareMap,"frontOdoEncoder", new Pose2d(8.5, 0.8, Math.toRadians(90.0)));
-        rightPod.getEncoder().setDirection(Encoder.Direction.REVERSE);
+                rightPod = new OdometryPod(hardwareMap,"rightOdoEncoder", new Pose2d(0.8, -7.5, 0.0 ), Encoder.Direction.REVERSE),
+                frontPod = new OdometryPod(hardwareMap,"frontOdoEncoder", new Pose2d(8.5, 0.8, Math.toRadians(90.0)), Encoder.Direction.REVERSE);
 
         threeWheelTrackingLocalizer = new ThreeWheelTrackingLocalizer(leftPod, rightPod,frontPod);
         twoWheelLeftFrontTrackingLocalizer = new TwoWheelTrackingLocalizer(leftPod, frontPod, drive);
@@ -188,6 +187,11 @@ public class RevEncoderTestOpMode extends LinearOpMode {
             telemetry.addData("leftTicks", String.format("%d", leftPod.getEncoder().getCurrentPosition()));
             telemetry.addData("rightTicks", String.format("%d", rightPod.getEncoder().getCurrentPosition()));
             telemetry.addData("frontTicks", String.format("%d", frontPod.getEncoder().getCurrentPosition()));
+
+            telemetry.addLine("Encoder Position (inches)");
+            telemetry.addData("left", String.format("%.3f", leftPod.getPosition()));
+            telemetry.addData("right", String.format("%.3f", rightPod.getPosition()));
+            telemetry.addData("front", String.format("%.3f", frontPod.getPosition()));
 
             telemetry.update();
         }
