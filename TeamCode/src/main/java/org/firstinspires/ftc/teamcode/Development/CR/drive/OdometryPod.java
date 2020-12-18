@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.Development.CR.drive;
 
-import org.firstinspires.ftc.teamcode.Development.ET.util.Encoder;
+import org.firstinspires.ftc.teamcode.Development.CR.util.Encoder;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -13,13 +13,16 @@ public class OdometryPod {
 
     private RevThroughBoreEncoder encoder;
     private Pose2d pose;
-
-    public OdometryPod(HardwareMap hardwareMap, String motorName, Pose2d pose) {
-        this(new RevThroughBoreEncoder(hardwareMap.get(DcMotorEx.class, motorName)), pose);
+    public OdometryPod(HardwareMap hardwareMap, String motorName, Pose2d pose, Encoder.Direction direction) {
+        this(new RevThroughBoreEncoder(hardwareMap.get(DcMotorEx.class, motorName)), pose, direction);
     }
-    public OdometryPod(RevThroughBoreEncoder encoder, Pose2d pose) {
+    public OdometryPod(HardwareMap hardwareMap, String motorName, Pose2d pose) {
+        this(new RevThroughBoreEncoder(hardwareMap.get(DcMotorEx.class, motorName)), pose, Encoder.Direction.FORWARD);
+    }
+    public OdometryPod(RevThroughBoreEncoder encoder, Pose2d pose, Encoder.Direction direction) {
         this.encoder = encoder;
         this.pose = pose;
+        this.encoder.setDirection(direction);
     }
     public Encoder getEncoder() {
         return this.encoder;
