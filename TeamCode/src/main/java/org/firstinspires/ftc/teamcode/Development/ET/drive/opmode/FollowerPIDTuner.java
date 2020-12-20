@@ -22,7 +22,7 @@ import org.firstinspires.ftc.teamcode.Development.ET.drive.SampleMecanumDrive;
  * If you are using SampleTankDrive, you should be tuning AXIAL_PID, CROSS_TRACK_PID, and HEADING_PID.
  * These coefficients can be tuned live in dashboard.
  */
-@Config
+//@Config
 @Autonomous(group = "drive")
 @Disabled
 public class FollowerPIDTuner extends LinearOpMode {
@@ -41,10 +41,13 @@ public class FollowerPIDTuner extends LinearOpMode {
         if (isStopRequested()) return;
 
         while (!isStopRequested()) {
+            telemetry.addData("pose", drive.getPoseEstimate().toString());
+            telemetry.update();
             Trajectory traj = drive.trajectoryBuilder(startPose)
                     .forward(DISTANCE)
                     .build();
-            drive.followTrajectory(traj);
+            drive.followTrajectory
+                    (traj);
             drive.turn(Math.toRadians(90));
 
             startPose = traj.end().plus(new Pose2d(0, 0, Math.toRadians(90)));

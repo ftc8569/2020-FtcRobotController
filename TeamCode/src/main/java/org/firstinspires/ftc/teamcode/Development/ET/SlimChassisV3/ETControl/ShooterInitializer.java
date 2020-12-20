@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.ETControl;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 
 /**

@@ -31,6 +31,7 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
 
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.teamcode.Development.ET.util.DashboardUtil;
 import org.firstinspires.ftc.teamcode.Development.ET.util.LynxModuleUtil;
 
@@ -38,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.DoubleSupplier;
 
 import static org.firstinspires.ftc.teamcode.Development.ET.drive.DriveConstants.BASE_CONSTRAINTS;
 import static org.firstinspires.ftc.teamcode.Development.ET.drive.DriveConstants.MOTOR_VELO_PID;
@@ -51,9 +53,9 @@ import static org.firstinspires.ftc.teamcode.Development.ET.drive.DriveConstants
 /*
  * Simple mecanum drive hardware implementation for REV hardware.
  */
-@Config
+//@Config
 public class SampleMecanumDrive extends MecanumDrive {
-    public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(0, 0, 0);
+    public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(8, 0, 0);
     public static PIDCoefficients HEADING_PID = new PIDCoefficients(8, 0, 0);
 
     public static double LATERAL_MULTIPLIER = 1;
@@ -63,6 +65,10 @@ public class SampleMecanumDrive extends MecanumDrive {
     public static double OMEGA_WEIGHT = 1;
 
     public static int POSE_HISTORY_LIMIT = 100;
+
+    public static double FOLLOWER_TIMEOUT = 1;
+    public static double FOLLOWER_HEADING_TOLERANCE = Math.toRadians(0.5);
+    public static double FOLLOWER_POSITION_TOLERANCE = 0.25;
 
     public enum Mode {
         IDLE,
@@ -86,7 +92,7 @@ public class SampleMecanumDrive extends MecanumDrive {
 
     private DcMotorEx leftFront, leftRear, rightRear, rightFront;
     private List<DcMotorEx> motors;
-    private BNO055IMU imu;
+    private BNO055IMU imu, imu1;
 
     private VoltageSensor batteryVoltageSensor;
 
@@ -108,8 +114,16 @@ public class SampleMecanumDrive extends MecanumDrive {
         turnController.setInputBounds(0, 2 * Math.PI);
 
         constraints = new MecanumConstraints(BASE_CONSTRAINTS, TRACK_WIDTH);
-        follower = new HolonomicPIDVAFollower(TRANSLATIONAL_PID, TRANSLATIONAL_PID, HEADING_PID,
-                new Pose2d(0.5, 0.5, Math.toRadians(5.0)), 1.0);
+        // TODO: keep in mind that these can be adjusted for more accurate following.
+        follower = new HolonomicPIDVAFollower(
+                TRANSLATIONAL_PID,
+                TRANSLATIONAL_PID,
+                HEADING_PID,
+                new Pose2d( FOLLOWER_POSITION_TOLERANCE,
+                            FOLLOWER_POSITION_TOLERANCE,
+                            FOLLOWER_HEADING_TOLERANCE),
+                FOLLOWER_TIMEOUT
+        );
 
         poseHistory = new LinkedList<>();
 
@@ -127,7 +141,6 @@ public class SampleMecanumDrive extends MecanumDrive {
 //        parameters.angleUnit = BNO055IMU.AngleUnit.RADIANS;
 //        imu.initialize(parameters);
 
-        // TODO: if your hub is mounted vertically, remap the IMU axes so that the z-axis points
         // upward (normal to the floor) using a command like the following:
         // BNO055IMUUtil.remapAxes(imu, AxesOrder.XYZ, AxesSigns.NPN);
 
@@ -154,10 +167,10 @@ public class SampleMecanumDrive extends MecanumDrive {
             setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, MOTOR_VELO_PID);
         }
 
-        // TODO: reverse any motors using DcMotor.setDirection()
+        // reverse any motors using DcMotor.setDirection()
         leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
         leftRear.setDirection(DcMotorSimple.Direction.REVERSE);
-        // TODO: if desired, use setLocalizer() to change the localization method
+        // if desired, use setLocalizer() to change the localization method
         // for instance, setLocalizer(new ThreeTrackingWheelLocalizer(...));
         setLocalizer(new StandardTrackingWheelLocalizer(hardwareMap));
     }
@@ -204,6 +217,10 @@ public class SampleMecanumDrive extends MecanumDrive {
     public void followTrajectory(Trajectory trajectory) {
         followTrajectoryAsync(trajectory);
         waitForIdle();
+    }
+
+    public void cancelFollowing() {
+        mode = Mode.IDLE;
     }
 
     public Pose2d getLastError() {
@@ -269,7 +286,8 @@ public class SampleMecanumDrive extends MecanumDrive {
                 fieldOverlay.setStroke("#4CAF50");
                 DashboardUtil.drawRobot(fieldOverlay, newPose);
 
-                if (t >= turnProfile.duration()) {
+                double overallHeadingError = Math.abs(targetState.getX() - currentPose.getHeading());
+                if ((overallHeadingError <= FOLLOWER_HEADING_TOLERANCE && t >= turnProfile.duration()) || (t >= turnProfile.duration() + FOLLOWER_TIMEOUT)) {
                     mode = Mode.IDLE;
                     setDriveSignal(new DriveSignal());
                 }
@@ -301,6 +319,8 @@ public class SampleMecanumDrive extends MecanumDrive {
 
         fieldOverlay.setStroke("#3F51B5");
         DashboardUtil.drawRobot(fieldOverlay, currentPose);
+
+
 
         dashboard.sendTelemetryPacket(packet);
     }
@@ -377,11 +397,11 @@ public class SampleMecanumDrive extends MecanumDrive {
     }
 
     @Override
-    public void setMotorPowers(double v, double v1, double v2, double v3) {
-        leftFront.setPower(v);
-        leftRear.setPower(v1);
-        rightRear.setPower(v2);
-        rightFront.setPower(v3);
+    public void setMotorPowers(double lf, double lr, double rr, double rf) {
+        leftFront.setPower(lf);
+        leftRear.setPower(lr);
+        rightRear.setPower(rr);
+        rightFront.setPower(rf);
     }
 
     @Override

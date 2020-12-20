@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.ETControl;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 
 public class ShooterController {
@@ -32,9 +33,9 @@ public class ShooterController {
     }
 
     public void update(boolean shoot) {
-        if (System.currentTimeMillis() - lastFlick < shotInterval * .6)
+        if (System.currentTimeMillis() - lastFlick < shotInterval * .5)
             sc.setServo(ShooterInitializer.position.FORWARD);
-        else if (shoot && Math.abs(sc.getVelocity() / maxVelo) > Math.abs(pow) - veloTolerance && Math.abs(sc.getVelocity() / maxVelo) < Math.abs(pow) + veloTolerance && System.currentTimeMillis() - lastFlick > shotInterval) {
+        else if (shoot && Math.abs(sc.getVelocity() / maxVelo) > Math.abs(pow) - veloTolerance && Math.abs(sc.getVelocity() / maxVelo) < Math.abs(pow) + veloTolerance && System.currentTimeMillis() - lastFlick > shotInterval && Math.abs(sc.getVelocity()) > 0) {
             lastFlick = System.currentTimeMillis();
             sc.setServo(ShooterInitializer.position.FORWARD);
         } else sc.setServo(ShooterInitializer.position.BACKWARD);
