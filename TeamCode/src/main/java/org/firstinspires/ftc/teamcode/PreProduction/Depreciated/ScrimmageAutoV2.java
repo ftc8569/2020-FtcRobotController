@@ -39,7 +39,7 @@ import java.util.ArrayList;
 
 //@Config
 @Disabled
-@Autonomous(name = "Pre: ScrimmageAutoV2", group = "Pre-Production")
+//@Autonomous(name = "Pre: ScrimmageAutoV2", group = "Pre-Production")
 public class ScrimmageAutoV2 extends LinearOpMode {
 
     public static volatile int HMIN = 60, SMIN = 100, VMIN = 50;

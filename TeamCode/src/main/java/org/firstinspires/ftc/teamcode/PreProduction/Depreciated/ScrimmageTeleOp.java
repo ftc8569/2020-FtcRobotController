@@ -173,18 +173,18 @@ public class ScrimmageTeleOp extends OpMode {
             movementMultiplier = .5;
             switch(rings) {
                 case 3:
-                    currentPower = pows.pow1;
+                    currentPower = pows.getPow1();
                     sc.setPower(currentPower);
                     break;
 
                 case 2:
                 default:
-                    currentPower = pows.pow2;
+                    currentPower = pows.getPow2();
                     sc.setPower(currentPower);
                     break;
 
                 case 1:
-                    currentPower = pows.pow3;
+                    currentPower = pows.getPow3();
                     sc.setPower(currentPower);
                     break;
             }

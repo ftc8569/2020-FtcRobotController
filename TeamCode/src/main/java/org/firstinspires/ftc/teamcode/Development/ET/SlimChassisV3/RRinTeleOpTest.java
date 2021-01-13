@@ -175,17 +175,17 @@ public class RRinTeleOpTest extends OpMode {
         if(spun) {
             switch((sc.getShots() % 3) + 1) {
                 case 1:
-                    currentPower = pows.pow1;
+                    currentPower = pows.getPow1();
                     sc.setPower(currentPower);
                     break;
 
                 case 2:
-                    currentPower = pows.pow2;
+                    currentPower = pows.getPow2();
                     sc.setPower(currentPower);
                     break;
 
                 case 3:
-                    currentPower = pows.pow3;
+                    currentPower = pows.getPow3();
                     sc.setPower(currentPower);
                     break;
             }

@@ -36,7 +36,7 @@ import org.openftc.easyopencv.OpenCvPipeline;
 import java.util.ArrayList;
 
 @Disabled
-@Autonomous(name = "Pre: ScrimmageAuto", group = "Pre-Production")
+//@Autonomous(name = "Pre: ScrimmageAuto", group = "Pre-Production")
 public class ScrimmageAuto extends LinearOpMode {
 
     public static volatile int HMIN = 60, SMIN = 100, VMIN = 50;

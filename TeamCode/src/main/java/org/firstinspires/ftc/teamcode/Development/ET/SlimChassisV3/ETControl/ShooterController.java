@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 public class ShooterController {
 
-    double veloTolerance, shotInterval, maxVelo, pow = 0;
+    public double veloTolerance = 0, shotInterval = 0, maxVelo = 0, pow = 0;
     ShooterInitializer sc;
     long lastPressed = 0, lastFlick = 0;
 
@@ -23,12 +23,14 @@ public class ShooterController {
     }
 
     public void setPower(double power) {
+        sc.setMotorEnabled();
         sc.spinUp(power);
         pow = power;
     }
 
     public void stopMotor() {
         sc.spinUp(0);
+        sc.setMotorDisabled();
         pow = 0;
     }
 

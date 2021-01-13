@@ -66,7 +66,7 @@ public class SampleMecanumDrive extends MecanumDrive {
 
     public static int POSE_HISTORY_LIMIT = 100;
 
-    public static double FOLLOWER_TIMEOUT = 1;
+    public static double FOLLOWER_TIMEOUT = .5;
     public static double FOLLOWER_HEADING_TOLERANCE = Math.toRadians(0.5);
     public static double FOLLOWER_POSITION_TOLERANCE = 0.25;
 
@@ -90,7 +90,7 @@ public class SampleMecanumDrive extends MecanumDrive {
 
     private LinkedList<Pose2d> poseHistory;
 
-    private DcMotorEx leftFront, leftRear, rightRear, rightFront;
+    public DcMotorEx leftFront, leftRear, rightRear, rightFront;
     private List<DcMotorEx> motors;
     private BNO055IMU imu, imu1;
 
@@ -220,6 +220,9 @@ public class SampleMecanumDrive extends MecanumDrive {
     }
 
     public void cancelFollowing() {
+        for(DcMotorEx mot : motors) {
+            mot.setPower(0);
+        }
         mode = Mode.IDLE;
     }
 

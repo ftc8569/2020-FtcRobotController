@@ -6,11 +6,9 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
-import com.arcrobotics.ftclib.hardware.RevIMU;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -20,18 +18,23 @@ import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.Development.CR.vision.PipelineStages;
+import org.firstinspires.ftc.teamcode.Development.CR.vision.RingDetectionEnum;
+import org.firstinspires.ftc.teamcode.Development.CR.vision.RingFinderPipeline;
 import org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.DonutShooter2000Controller;
 import org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.ETControl.FieldOrientedDrive;
 import org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.ETControl.MotorBulkRead;
 import org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.ETControl.ShooterController;
 import org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.ETControl.ShotPowers;
-import org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.RRinTeleOpTest;
-import org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.SlimChassisV3Controller;
 import org.firstinspires.ftc.teamcode.Development.ET.drive.DriveConstants;
 import org.firstinspires.ftc.teamcode.Development.ET.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.PreProduction.Depreciated.ScrimmageAutoV2;
 import org.firstinspires.ftc.teamcode.PreProduction.Depreciated.Waypoints.PoseStorage;
+import org.openftc.easyopencv.OpenCvCamera;
+import org.openftc.easyopencv.OpenCvCameraFactory;
+import org.openftc.easyopencv.OpenCvCameraRotation;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -63,16 +66,21 @@ public class ScrimmageTeleOp extends OpMode {
                             armStartPos = ScrimmageAutoV2.armStartPos + 360,
                             armUpPos = ScrimmageAutoV2.armUpPos + 360,
                             armForwardPos = ScrimmageAutoV2.armForwardPos + 360,
-                            shooterDefaultPower = -.710,
+                            powerShotPower = -.715,
                             currentPower = 0,
                             movementMultiplier = 1,
                             maxVelocity = 2400,
-                            veloTolerance = .007,
+                            veloToleranceTower = .007,
+                            veloTolerancePowerShots = .004,
                             shotInterval = 500;
+
+    public static Pose2d    powerShot1 = new Pose2d(36.5, -42, Math.toRadians(0)),
+                            powerShot2 = new Pose2d(36.5, -39, Math.toRadians(0)),
+                            powerShot3 = new Pose2d(36.5, -36, Math.toRadians(0));
 
     public static ShotPowers pows = new ShotPowers(-.71, -.7025, -.71); // powers for straight on shooting.
     //                                                                      Angle shooting needs higher powers
-    public static PIDFCoefficients pidfCoefficients = new PIDFCoefficients(15, 10, 1, 20);
+    public static PIDFCoefficients pidfCoefficients = new PIDFCoefficients(5, 3, 0, 20);
     public static double pCoefficient = 15;
 
     public static PIDFCoefficients shooterCoeffs = new PIDFCoefficients(30, 4.5, 0, 0);
@@ -99,6 +107,8 @@ public class ScrimmageTeleOp extends OpMode {
     DistanceSensor dist;
 
     Pose2d poseEstimate;
+
+    int lastShots = 0;
 
     enum Mode {
         DRIVER_CONTROL,
@@ -136,11 +146,34 @@ public class ScrimmageTeleOp extends OpMode {
 
 //    FtcDashboard dashboard;
 
+    public static volatile PipelineStages PIPELINESTAGE = PipelineStages.OUTPUTWITHBOUNDINGRECT;
+
+    OpenCvCamera webcam;
+
+    RingFinderPipeline pipeline;
+
+
 
 
     public void init() {
         telemetry.addData(">", "Initialization started");
         Collections.addAll(ringDists, 3.5, 2.6, 1.5, 1.05);
+
+        webcam:
+        {
+            int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+            webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
+
+            telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+
+            pipeline = new RingFinderPipeline(webcam, telemetry);
+            pipeline.pipelineStageToDisplay = PIPELINESTAGE;
+            webcam.setPipeline(pipeline);
+
+            FtcDashboard.getInstance().startCameraStream(webcam, 10);
+
+            webcam.openCameraDeviceAsync(() -> webcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT));
+        }
 
         DriveConstants.maxVel /= 2;
         DriveConstants.maxAccel /= 2;
@@ -151,8 +184,8 @@ public class ScrimmageTeleOp extends OpMode {
 
 //        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
-        SampleMecanumDrive.FOLLOWER_HEADING_TOLERANCE = Math.toRadians(.25);
-        SampleMecanumDrive.FOLLOWER_POSITION_TOLERANCE = .125;
+        SampleMecanumDrive.FOLLOWER_HEADING_TOLERANCE = Math.toRadians(.125);
+        SampleMecanumDrive.FOLLOWER_POSITION_TOLERANCE = .06125;
         SampleMecanumDrive.FOLLOWER_TIMEOUT = 2;
 
         led = hardwareMap.get(RevBlinkinLedDriver.class, "led");
@@ -167,19 +200,20 @@ public class ScrimmageTeleOp extends OpMode {
         heading = () -> Math.toDegrees(drive.getPoseEstimate().getHeading()) + offset;
 
         fod = new FieldOrientedDrive(heading, djx, djy, dr);
-        sc = new ShooterController(DonutShooter2000Controller.class, hardwareMap, veloTolerance, shotInterval, maxVelocity);
+        sc = new ShooterController(DonutShooter2000Controller.class, hardwareMap, veloToleranceTower, shotInterval, maxVelocity);
         sc.setPIDF(shooterCoeffs);
         MotorBulkRead.MotorBulkMode(LynxModule.BulkCachingMode.MANUAL, hardwareMap);
 
         flipperMotor = this.hardwareMap.get(DcMotorEx.class, "flipperMotor");
-//        flipperMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        flipperMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         flipperMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-//        flipperMotor.setTargetPositionTolerance(20);
-//        flipperMotor.setTargetPosition(currentPos);
-//        flipperMotor.setPower(.125);
-        flipperMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//        flipperMotor.setVelocityPIDFCoefficients(pidfCoefficients.p, pidfCoefficients.i, pidfCoefficients.d, pidfCoefficients.f);
-//        flipperMotor.setPositionPIDFCoefficients(pCoefficient);
+        flipperMotor.setTargetPositionTolerance(20);
+        flipperMotor.setTargetPosition(currentPos);
+        flipperMotor.setPower(.175);
+        flipperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        flipperMotor.setMotorDisable();
+        flipperMotor.setVelocityPIDFCoefficients(pidfCoefficients.p, pidfCoefficients.i, pidfCoefficients.d, pidfCoefficients.f);
+        flipperMotor.setPositionPIDFCoefficients(pCoefficient);
 
         grabberServo = this.hardwareMap.servo.get("grabberServo");
         this.grabberServo.setDirection(Servo.Direction.REVERSE);
@@ -248,24 +282,25 @@ public class ScrimmageTeleOp extends OpMode {
                     movementMultiplier = .5;
                     switch(rings) {
                         case 3:
-                            currentPower = pows.pow1;
+                            currentPower = pows.getPow1();
                             sc.setPower(currentPower);
                             break;
 
                         case 2:
                         default:
-                            currentPower = pows.pow2;
+                            currentPower = pows.getPow2();
                             sc.setPower(currentPower);
                             break;
 
                         case 1:
-                            currentPower = pows.pow3;
+                            currentPower = pows.getPow3();
                             sc.setPower(currentPower);
                             break;
                     }
                 } else {
                     currentPower = 0;
                     sc.setPower(currentPower);
+                    sc.stopMotor();
                     movementMultiplier = 1;
                 }
 
@@ -280,6 +315,7 @@ public class ScrimmageTeleOp extends OpMode {
 
                     currentMode = Mode.AUTOMATIC_CONTROL;
                     led.setPattern(RevBlinkinLedDriver.BlinkinPattern.DARK_RED);
+                    sc.setVeloTolerance(veloTolerancePowerShots);
 
                 }
                 break;
@@ -287,8 +323,14 @@ public class ScrimmageTeleOp extends OpMode {
 
                 // If x is pressed, we break out of the automatic following
                 if (gamepad1.x) {
-                    drive.cancelFollowing();
                     currentMode = Mode.DRIVER_CONTROL;
+                    spun = false;
+                    sc.stopMotor();
+                    sc.resetShots();
+                    led.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
+
+                    sc.setVeloTolerance(veloToleranceTower);
+
                 }
 
                 switch (pathMode) {
@@ -305,6 +347,7 @@ public class ScrimmageTeleOp extends OpMode {
                                     sc.stopMotor();
                                     sc.resetShots();
                                     led.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
+                                    sc.setVeloTolerance(veloToleranceTower);
                                 }
                             } else {
                                 sc.resetShots();
@@ -320,7 +363,7 @@ public class ScrimmageTeleOp extends OpMode {
                         switch (designatedPos) {
                             case POWERSHOT1:
                                 Trajectory traj1 = drive.trajectoryBuilder(poseEstimate)
-                                        .splineToLinearHeading(new Pose2d(36.5, -42, Math.toRadians(0)), 0)
+                                        .splineToLinearHeading(powerShot1, 0)
                                         .build();
 
                                 drive.followTrajectoryAsync(traj1);
@@ -329,7 +372,7 @@ public class ScrimmageTeleOp extends OpMode {
                                 break;
                             case POWERSHOT2:
                                 Trajectory traj2 = drive.trajectoryBuilder(poseEstimate)
-                                        .splineToLinearHeading(new Pose2d(36.5, -36, Math.toRadians(0)), 0)
+                                        .splineToLinearHeading(powerShot2, 0)
                                         .build();
 
                                 drive.followTrajectoryAsync(traj2);
@@ -338,7 +381,7 @@ public class ScrimmageTeleOp extends OpMode {
                                 break;
                             case POWERSHOT3:
                                 Trajectory traj3 = drive.trajectoryBuilder(poseEstimate)
-                                        .splineToLinearHeading(new Pose2d(36.5, -30, Math.toRadians(0)), 0)
+                                        .splineToLinearHeading(powerShot3, 0)
                                         .build();
 
                                 drive.followTrajectoryAsync(traj3);
@@ -363,6 +406,10 @@ public class ScrimmageTeleOp extends OpMode {
         }
 
         sc.update(gamepad1.right_trigger >= .25);
+        if(sc.getShots() != lastShots) {
+            pipeline.CaptureImage();
+            lastShots = sc.getShots();
+        }
 
         if(gamepad2.left_bumper && System.currentTimeMillis() - lastPressed > 500) {
             lastPressed = System.currentTimeMillis();
@@ -389,8 +436,22 @@ public class ScrimmageTeleOp extends OpMode {
 
 
 
-        if(Math.abs(gamepad2.right_stick_y) > .05) flipperMotor.setPower(gamepad2.right_stick_y * .25);
-        else flipperMotor.setPower(0);
+        if(Math.abs(gamepad2.right_stick_y) > .05 || Math.abs(gamepad2.right_stick_x) > .05) {
+            double desAng = Math.atan2(-gamepad2.right_stick_y, -gamepad2.right_stick_x);
+            double desDegrees = Math.toDegrees(desAng); //for my own comfort
+            final double CPR = 753.2;
+            double TPD = CPR / 360;
+            double desTicks = TPD * desDegrees;
+//                    >= 0 ? desDegrees : desDegrees + 180;
+
+            flipperMotor.setMotorEnable();
+            flipperMotor.setTargetPosition((int) desTicks);
+            telemetry.addData("DesiredDegrees", desDegrees);
+        } else {
+            flipperMotor.setMotorDisable();
+        }
+
+
 //        if         (gamepad2.dpad_up) currentPos = (int) armUpPos;
 //        else if  (gamepad2.dpad_left) currentPos = (int) armForwardPos;
 //        else if (gamepad2.dpad_right) currentPos = (int) armStartPos;
@@ -445,6 +506,7 @@ public class ScrimmageTeleOp extends OpMode {
         telemetry.addData("Rings", (rings));
         telemetry.addData("pose", poseEstimate);
         telemetry.addData("mode", currentMode);
+        telemetry.addData("ArmPosition", flipperMotor.getCurrentPosition());
 //        telemetry.addData("PDIF", sc.getPIDF());
     }
 

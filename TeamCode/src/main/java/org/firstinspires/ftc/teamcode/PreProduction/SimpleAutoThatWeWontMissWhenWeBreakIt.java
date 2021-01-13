@@ -4,6 +4,7 @@ import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
@@ -14,6 +15,7 @@ import org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.ETControl.Sho
 import org.firstinspires.ftc.teamcode.Development.ET.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.PreProduction.Depreciated.ScrimmageTeleOp;
 
+@Disabled
 @Autonomous(name = "Pre: SimpleAuto", group = "Pre-Production", preselectTeleOp = "Pre: ScrimmageTeleOpWithAutomation")
 public class SimpleAutoThatWeWontMissWhenWeBreakIt extends LinearOpMode {
 
@@ -80,7 +82,7 @@ public class SimpleAutoThatWeWontMissWhenWeBreakIt extends LinearOpMode {
         drive.turn(Math.toRadians(-23));
 
         //spins up the shooter so that it is prepared to shoot
-        sc.setPower(ScrimmageTeleOp.pows.pow1 - PowerOffset);
+        sc.setPower(ScrimmageTeleOp.pows.getPow1() - PowerOffset);
 
 
         //sleep to give the shooter time to spin up
@@ -93,7 +95,7 @@ public class SimpleAutoThatWeWontMissWhenWeBreakIt extends LinearOpMode {
         sc.setServo(ShooterInitializer.position.BACKWARD);
         sleep(250);
 
-        sc.setPower(ScrimmageTeleOp.pows.pow2 - PowerOffset);
+        sc.setPower(ScrimmageTeleOp.pows.getPow2() - PowerOffset);
         sleep(1000);
         while (!sc.canShoot());
 
@@ -102,7 +104,7 @@ public class SimpleAutoThatWeWontMissWhenWeBreakIt extends LinearOpMode {
         sc.setServo(ShooterInitializer.position.BACKWARD);
         sleep(250);
 
-        sc.setPower(ScrimmageTeleOp.pows.pow3 - PowerOffset);
+        sc.setPower(ScrimmageTeleOp.pows.getPow3() - PowerOffset);
         sleep(1000);
         while (!sc.canShoot());
 
