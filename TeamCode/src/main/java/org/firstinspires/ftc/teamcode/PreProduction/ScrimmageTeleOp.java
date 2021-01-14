@@ -85,7 +85,7 @@ public class ScrimmageTeleOp extends OpMode {
 
     public static PIDFCoefficients shooterCoeffs = new PIDFCoefficients(30, 4.5, 0, 0);
 
-    public boolean  open = true,
+    public boolean  open = false,
                     spun = false,
                     changedManual = false;
 

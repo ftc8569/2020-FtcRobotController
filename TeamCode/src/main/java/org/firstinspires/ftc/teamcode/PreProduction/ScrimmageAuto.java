@@ -79,7 +79,7 @@ public class ScrimmageAuto extends LinearOpMode {
     public static PIDFCoefficients pidfCoefficients = ScrimmageTeleOp.pidfCoefficients;
     public static double pCoefficient = ScrimmageTeleOp.pCoefficient;
 
-    public static ShotPowers powOffset = new ShotPowers(.00, -.00, -.00);
+    public static ShotPowers powOffset = new ShotPowers(.00, -.00, -.0075);
 
     public static ShotPowers shooterPower = new ShotPowers(ScrimmageTeleOp.pows.getPow1() - powOffset.getPow1(), ScrimmageTeleOp.pows.getPow2() - powOffset.getPow2(), ScrimmageTeleOp.pows.getPow3() - powOffset.getPow3());
 
@@ -105,12 +105,24 @@ public class ScrimmageAuto extends LinearOpMode {
 
     public static double slowFactor = 50;
 
+    public ZeroRingWaypoints zero;
+
+    public OneRingWaypoints one;
+
+    public FourRingWaypoints four;
+
+    public RingFinderPipeline pipeline;
+
 
     @SuppressWarnings({"StatementWithEmptyBody", "UnusedLabel"})
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry.addData(">", "Starting initialization, please wait...");
         telemetry.update();
+
+        led = hardwareMap.get(RevBlinkinLedDriver.class, "led");
+        led.setPattern(RevBlinkinLedDriver.BlinkinPattern.DARK_RED);
+        LEDChanged = System.currentTimeMillis();
 
         webcam:
         {
@@ -119,7 +131,7 @@ public class ScrimmageAuto extends LinearOpMode {
 
             telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
-            RingFinderPipeline pipeline = new RingFinderPipeline(webcam, telemetry);
+            pipeline = new RingFinderPipeline(webcam, telemetry);
             pipeline.pipelineStageToDisplay = PIPELINESTAGE;
             webcam.setPipeline(pipeline);
 
@@ -130,9 +142,7 @@ public class ScrimmageAuto extends LinearOpMode {
 
         org.firstinspires.ftc.teamcode.PreProduction.Depreciated.ScrimmageTeleOp.armOffset = 0;
         org.firstinspires.ftc.teamcode.PreProduction.Depreciated.ScrimmageTeleOp.headingOffset = 0;
-        led = hardwareMap.get(RevBlinkinLedDriver.class, "led");
-        led.setPattern(RevBlinkinLedDriver.BlinkinPattern.DARK_RED);
-        LEDChanged = System.currentTimeMillis();
+
 
 
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
@@ -168,42 +178,30 @@ public class ScrimmageAuto extends LinearOpMode {
         bottomMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         topMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        zero = new ZeroRingWaypoints();
+        zero.init(drive);
+
+        one = new OneRingWaypoints();
+        one.init(drive);
+
+        four = new FourRingWaypoints();
+        four.init(drive);
+
 
 
         while(System.currentTimeMillis() - LEDChanged < 1000);
-
-
-
-
-        //constantly takes readings until started
-//        while (!isStarted() && !isStopRequested()) {
-//            rings = pipeline.RingsDetected;
-//            telemetry.addData("Rings", rings);
-//            telemetry.update();
-//        }
-
-
-        rings = RingDetectionEnum.ONE;
-
-        switch (rings) {
-            case ZERO:
-                paths = new ZeroRingWaypoints();
-                paths.init(drive);
-                break;
-            case ONE:
-                paths = new OneRingWaypoints();
-                paths.init(drive);
-                break;
-            case FOUR:
-                paths = new FourRingWaypoints();
-                paths.init(drive);
-                break;
-        }
-
-        telemetry.addData(">", "Initialization completed.");
-        telemetry.update();
-
         led.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
+
+
+
+
+//        constantly takes readings until started
+        while (!isStarted() && !isStopRequested()) {
+            rings = pipeline.RingsDetected;
+            telemetry.addData(">", "Initialization completed.");
+            telemetry.addData("Rings", rings);
+            telemetry.update();
+        }
 
 
         waitForStart();
@@ -216,6 +214,7 @@ public class ScrimmageAuto extends LinearOpMode {
 
         switch (rings) {
             case ZERO: {
+                paths = zero;
                 drive.followTrajectory(paths.toShoot);
 
                 //Label so that you can collapse it on the left to make readability easier.
@@ -297,12 +296,16 @@ public class ScrimmageAuto extends LinearOpMode {
                     sleep(500);
                 }
 
+                grabberServo.setPosition(grabberClosedPos);
+
+
                 drive.followTrajectory(paths.toLine);
 
                 break;
             }
 
             case ONE: {
+                paths = one;
                 ifIAddALabelWillYouStopYellingAtMeIntelliJ: {
                 drive.followTrajectory(paths.toShoot);
                 }
@@ -446,6 +449,7 @@ public class ScrimmageAuto extends LinearOpMode {
             }
 
             case FOUR: {
+                paths = four;
                 ifIAddALabelWillYouStopYellingAtMeIntelliJPleaseThankYou: {
                     drive.followTrajectory(paths.toShoot);
                 }

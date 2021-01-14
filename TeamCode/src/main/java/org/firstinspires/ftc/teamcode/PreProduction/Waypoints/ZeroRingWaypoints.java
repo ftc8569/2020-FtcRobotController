@@ -14,7 +14,7 @@ public class ZeroRingWaypoints extends AutoPaths {
     public void init(SampleMecanumDrive drive) {
         startPose = ScrimmageAuto.startPose;
         toShoot = drive.trajectoryBuilder(startPose)
-            .splineToSplineHeading(new Pose2d(66, 36, Math.toRadians(-4)), Math.toRadians(-6))
+            .splineToSplineHeading(new Pose2d(62, 36, Math.toRadians(-4)), Math.toRadians(-6))
             .build();
 
         toDrop = drive.trajectoryBuilder(toShoot.end())

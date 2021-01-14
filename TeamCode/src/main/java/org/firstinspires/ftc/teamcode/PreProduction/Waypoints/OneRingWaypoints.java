@@ -15,7 +15,7 @@ public class OneRingWaypoints extends AutoPaths {
         startPose = ScrimmageAuto.startPose;
         toShoot = drive.trajectoryBuilder(startPose)
                 .splineToConstantHeading(new Vector2d(9, 14), 0)
-                .splineToSplineHeading(new Pose2d(60, 14, 0), 0)
+                .splineToSplineHeading(new Pose2d(60, 14, Math.toRadians(-1.5)), 0)
                 .addDisplacementMarker(() -> drive.followTrajectory(toShootAvoidRings))
                 .build();
 
@@ -49,12 +49,12 @@ public class OneRingWaypoints extends AutoPaths {
                 .build();
 
         toDrop2 = drive.trajectoryBuilder(toPickSlow.end())
-                .splineToSplineHeading(new Pose2d(83, 21, 0),0)
+                .splineToSplineHeading(new Pose2d(83, 25, 0),0)
                 .build();
 
         toShoot2 = drive.trajectoryBuilder(toDrop2.end())
                 .splineToConstantHeading(new Vector2d(71, 33), Math.toRadians(180))
-                .splineToSplineHeading(new Pose2d(68, 42, Math.toRadians(-4)), Math.toRadians(90))
+                .splineToSplineHeading(new Pose2d(68, 42, Math.toRadians(-5.5)), Math.toRadians(90))
                 .build();
 
         toLine = drive.trajectoryBuilder(toShoot2.end())
