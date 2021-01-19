@@ -1,5 +1,9 @@
 package org.firstinspires.ftc.teamcode.PreProduction;
 
+import android.os.Build;
+
+import androidx.annotation.RequiresApi;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
@@ -28,14 +32,18 @@ import org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.ETControl.Fie
 import org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.ETControl.MotorBulkRead;
 import org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.ETControl.ShooterController;
 import org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.ETControl.ShotPowers;
+import org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.RingFinderPipelineButIedittedIt;
 import org.firstinspires.ftc.teamcode.Development.ET.drive.DriveConstants;
 import org.firstinspires.ftc.teamcode.Development.ET.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.PreProduction.Depreciated.ScrimmageAutoV2;
 import org.firstinspires.ftc.teamcode.PreProduction.Depreciated.Waypoints.PoseStorage;
+import org.opencv.core.Mat;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.function.DoubleSupplier;
@@ -62,7 +70,7 @@ public class ScrimmageTeleOp extends OpMode {
             headingOffset = 0;
 
     public static double    grabberOpenPos   =  0,
-                            grabberClosedPos =  0.33,
+                            grabberClosedPos =  .37,
                             armStartPos = ScrimmageAutoV2.armStartPos + 360,
                             armUpPos = ScrimmageAutoV2.armUpPos + 360,
                             armForwardPos = ScrimmageAutoV2.armForwardPos + 360,
@@ -87,7 +95,8 @@ public class ScrimmageTeleOp extends OpMode {
 
     public boolean  open = false,
                     spun = false,
-                    changedManual = false;
+                    changedManual = false,
+                    changed = false;
 
     int currentPos = 0;
 
@@ -150,11 +159,13 @@ public class ScrimmageTeleOp extends OpMode {
 
     OpenCvCamera webcam;
 
-    RingFinderPipeline pipeline;
+    RingFinderPipelineButIedittedIt pipeline;
+
+    Mat lastImage = new Mat();
 
 
 
-
+    @SuppressWarnings("UnusedLabel")
     public void init() {
         telemetry.addData(">", "Initialization started");
         Collections.addAll(ringDists, 3.5, 2.6, 1.5, 1.05);
@@ -166,7 +177,7 @@ public class ScrimmageTeleOp extends OpMode {
 
             telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
-            pipeline = new RingFinderPipeline(webcam, telemetry);
+            pipeline = new RingFinderPipelineButIedittedIt(webcam, telemetry);
             pipeline.pipelineStageToDisplay = PIPELINESTAGE;
             webcam.setPipeline(pipeline);
 
@@ -236,6 +247,7 @@ public class ScrimmageTeleOp extends OpMode {
 
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     public void loop() {
 //        if(!fod.isEnabled()) fod.enable();
         MotorBulkRead.clearCache();
@@ -276,6 +288,11 @@ public class ScrimmageTeleOp extends OpMode {
                     spun = false;
                     shooterChanged = System.currentTimeMillis();
                     changedManual = false;
+                    changed = false;
+                } else if(rings == 3 && !changed) {
+                    topMotor.setPower(0);
+                    bottomMotor.setPower(0);
+                    changed = true;
                 }
 
                 if(spun) {
@@ -407,8 +424,18 @@ public class ScrimmageTeleOp extends OpMode {
 
         sc.update(gamepad1.right_trigger >= .25);
         if(sc.getShots() != lastShots) {
-            pipeline.CaptureImage();
+            lastImage = pipeline.CaptureImage();
             lastShots = sc.getShots();
+        }
+
+        if(gamepad1.b) {
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+            LocalDateTime now = LocalDateTime.now();
+            String fileName = dtf.format(now);
+            if(!lastImage.equals(new Mat())) {
+                pipeline.saveOpenCvImageToFile(fileName, lastImage);
+                lastImage = new Mat();
+            }
         }
 
         if(gamepad2.left_bumper && System.currentTimeMillis() - lastPressed > 500) {
@@ -422,7 +449,7 @@ public class ScrimmageTeleOp extends OpMode {
             oldRings = rings;
         }
 
-        if(gamepad2.x && System.currentTimeMillis() - lastPressed2 > 1000 && !gamepad1.start) {
+        if(gamepad1.a && System.currentTimeMillis() - lastPressed2 > 1000 && !gamepad1.start) {
             spun = !spun;
             lastPressed2 = System.currentTimeMillis();
 //            if(spun) changedManual = true;
@@ -436,7 +463,7 @@ public class ScrimmageTeleOp extends OpMode {
 
 
 
-        if(Math.abs(gamepad2.right_stick_y) > .05 || Math.abs(gamepad2.right_stick_x) > .05) {
+        if(Math.abs(gamepad2.right_stick_y) > .5 || Math.abs(gamepad2.right_stick_x) > .5) {
             double desAng = Math.atan2(-gamepad2.right_stick_y, -gamepad2.right_stick_x);
             double desDegrees = Math.toDegrees(desAng); //for my own comfort
             final double CPR = 753.2;

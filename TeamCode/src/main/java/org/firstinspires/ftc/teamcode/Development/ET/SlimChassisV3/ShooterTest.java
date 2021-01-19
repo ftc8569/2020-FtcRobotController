@@ -108,8 +108,7 @@ public class ShooterTest extends OpMode {
 
         telemetry.addData("TimeWaited", System.currentTimeMillis() - lastFlick > FLICKDELAY);
         telemetry.addData("HoldingServo", System.currentTimeMillis() - lastFlick < STAYTIME);
-//        packet.put("CPS", Math.abs(this.ShooterMotorFront.getVelocity()));
-//        dashboard.sendTelemetryPacket(packet);
+
     }
 
 

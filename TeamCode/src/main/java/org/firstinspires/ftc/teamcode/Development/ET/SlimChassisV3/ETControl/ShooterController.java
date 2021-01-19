@@ -3,6 +3,9 @@ package org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.ETControl;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+
 
 public class ShooterController {
 
@@ -22,6 +25,11 @@ public class ShooterController {
         }
     }
 
+    enum Step {
+        FORWARD,
+        BACKWARD
+    }
+
     public void setPower(double power) {
         sc.setMotorEnabled();
         sc.spinUp(power);
@@ -34,13 +42,28 @@ public class ShooterController {
         pow = 0;
     }
 
+
     public void update(boolean shoot) {
-        if (System.currentTimeMillis() - lastFlick < shotInterval * .5)
-            sc.setServo(ShooterInitializer.position.FORWARD);
-        else if (shoot && Math.abs(sc.getVelocity() / maxVelo) > Math.abs(pow) - veloTolerance && Math.abs(sc.getVelocity() / maxVelo) < Math.abs(pow) + veloTolerance && System.currentTimeMillis() - lastFlick > shotInterval && Math.abs(sc.getVelocity()) > 0) {
-            lastFlick = System.currentTimeMillis();
-            sc.setServo(ShooterInitializer.position.FORWARD);
-        } else sc.setServo(ShooterInitializer.position.BACKWARD);
+        actPow = Math.abs(sc.getVelocity() / maxVelo);
+        switch (step) {
+            case FORWARD:
+                if (System.currentTimeMillis() - lastFlick > shotInterval * .5) step = Step.BACKWARD;
+                break;
+            case BACKWARD:
+                if(shoot && actPow > Math.abs(pow) - veloTolerance &&
+                        actPow < Math.abs(pow) + veloTolerance &&
+                        System.currentTimeMillis() - lastFlick > shotInterval &&
+                        Math.abs(sc.getVelocity()) > 0) {
+                    lastFlick = System.currentTimeMillis();
+                    step = Step.FORWARD;
+                    shots += 1;
+
+                }
+                break;
+        }
+
+        sc.setServo(step == Step.FORWARD ? ShooterInitializer.position.FORWARD : ShooterInitializer.position.BACKWARD);
+
     }
 
     public double getVelocity() {

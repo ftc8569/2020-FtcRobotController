@@ -31,8 +31,8 @@ import java.util.function.DoubleSupplier;
  * older version of scrimmageteleop with no automation
  */
 @Disabled
-@Config
-@TeleOp(name = "Pre: ScrimmageTeleOp1", group = "Pre-Production")
+//@Config
+//@TeleOp(name = "Pre: ScrimmageTeleOp1", group = "Pre-Production")
 public class ScrimmageTeleOp extends OpMode {
     FieldOrientedDrive fod;
     ShooterController sc;
@@ -50,7 +50,7 @@ public class ScrimmageTeleOp extends OpMode {
             headingOffset = 0;
 
     public static double    grabberOpenPos   =  0,
-                            grabberClosedPos =  0.33,
+                            grabberClosedPos =  0.7,
                             armStartPos = ScrimmageAutoV2.armStartPos + 360,
                             armUpPos = ScrimmageAutoV2.armUpPos + 360,
                             armForwardPos = ScrimmageAutoV2.armForwardPos + 360,

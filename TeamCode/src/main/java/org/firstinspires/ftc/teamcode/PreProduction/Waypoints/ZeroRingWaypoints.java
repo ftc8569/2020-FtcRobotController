@@ -18,7 +18,7 @@ public class ZeroRingWaypoints extends AutoPaths {
             .build();
 
         toDrop = drive.trajectoryBuilder(toShoot.end())
-                .splineToSplineHeading(new Pose2d(84, 24, Math.toRadians(-90)), Math.toRadians(-90))
+                .splineToSplineHeading(new Pose2d(76, 24, Math.toRadians(-90)), Math.toRadians(-90))
                 .build();
 
         toPick = drive.trajectoryBuilder(toDrop.end())
@@ -32,7 +32,7 @@ public class ZeroRingWaypoints extends AutoPaths {
                 .build();
 
         toDrop2 = drive.trajectoryBuilder(toPickSlow.end())
-                .splineToSplineHeading(new Pose2d(66.5, 20, Math.toRadians(-40)), Math.toRadians(-40))
+                .splineToSplineHeading(new Pose2d(66.5, 18, Math.toRadians(-40)), Math.toRadians(-40))
                 .build();
 
         toLine = drive.trajectoryBuilder(toDrop2.end())

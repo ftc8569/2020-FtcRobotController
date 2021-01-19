@@ -24,7 +24,7 @@ public class OneRingWaypoints extends AutoPaths {
                 .build();
 
         toDrop = drive.trajectoryBuilder(toShootAvoidRings.end())
-                .splineToLinearHeading(new Pose2d(94, 41, 0), 0)
+                .splineToLinearHeading(new Pose2d(88, 41, 0), 0)
                 .build();
 
         toRings = drive.trajectoryBuilder(toDrop.end())
@@ -40,7 +40,7 @@ public class OneRingWaypoints extends AutoPaths {
                 .build();
 
         toPick = drive.trajectoryBuilder(toRingsSlow.end())
-                .splineToSplineHeading(new Pose2d(40.75,35.75, Math.toRadians(140)), Math.toRadians(140))
+                .splineToSplineHeading(new Pose2d(42.75,37.75, Math.toRadians(140)), Math.toRadians(180))
                 .addDisplacementMarker(() -> drive.followTrajectory(toPickSlow))
                 .build();
 
@@ -49,7 +49,7 @@ public class OneRingWaypoints extends AutoPaths {
                 .build();
 
         toDrop2 = drive.trajectoryBuilder(toPickSlow.end())
-                .splineToSplineHeading(new Pose2d(83, 25, 0),0)
+                .splineToSplineHeading(new Pose2d(83, 28, 0),0)
                 .build();
 
         toShoot2 = drive.trajectoryBuilder(toDrop2.end())
