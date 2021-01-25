@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3;
 
+import android.os.Environment;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -23,6 +25,7 @@ import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvPipeline;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.LinkPermission;
 import java.util.ArrayList;
 
@@ -185,7 +188,7 @@ public class RingFinderPipelineButIedittedIt extends OpenCvPipeline
     }
 
     private int captureCounter = 0;
-    public Mat CaptureImage(){
+    public Mat CaptureImage() throws IOException {
         Mat image2Save;
         String fullFileName = String.format("ring-"+ pipelineStageToDisplay.toString().toLowerCase()+"-%d.png",captureCounter++);
         switch (pipelineStageToDisplay) {
@@ -207,12 +210,12 @@ public class RingFinderPipelineButIedittedIt extends OpenCvPipeline
                 break;
         }
 
-
-        return image2Save;
+        if(image2Save != null)        return image2Save;
+        else throw new IOException("Null image to save");
     }
 
     public static final File VISION_FOLDER =
-            new File(AppUtil.ROOT_FOLDER + "/vision/");
+            new File(Environment.getExternalStorageDirectory().getPath() + "/vision/");
     public boolean saveOpenCvImageToFile(String filename, Mat mat) {
 
         Mat mIntermediateMat = new Mat();

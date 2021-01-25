@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.PreProduction;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.trajectory.constraints.DriveConstraints;
@@ -60,7 +61,7 @@ public class ScrimmageAuto extends LinearOpMode {
     public static volatile int NORINGUPPER = 200, ONERINGUPPER = 2000;
     public static volatile PipelineStages PIPELINESTAGE = PipelineStages.OUTPUTWITHBOUNDINGRECT;
 
-    public static double shotInterval = 325;
+    public static double shotInterval = 500;
 
     RingDetectionEnum rings = RingDetectionEnum.UNKNOWN;
 
@@ -69,7 +70,7 @@ public class ScrimmageAuto extends LinearOpMode {
 
 
     public Servo grabberServo;
-    public DcMotorEx flipperMotor;
+    public static DcMotorEx flipperMotor;
     long lastPressed = 0;
 
     public static ShooterController sc;
@@ -81,11 +82,11 @@ public class ScrimmageAuto extends LinearOpMode {
     public static PIDFCoefficients pidfCoefficients = ScrimmageTeleOp.pidfCoefficients;
     public static double pCoefficient = ScrimmageTeleOp.pCoefficient;
 
-    public static ShotPowers powOffset = new ShotPowers(.00, -.00, -.0075);
+    public static ShotPowers powOffset = new ShotPowers(0,0.006,0.0);
 
     public static ShotPowers shooterPower = new ShotPowers(ScrimmageTeleOp.pows.getPow1() - powOffset.getPow1(), ScrimmageTeleOp.pows.getPow2() - powOffset.getPow2(), ScrimmageTeleOp.pows.getPow3() - powOffset.getPow3());
 
-    public static PIDFCoefficients pidf = new PIDFCoefficients(100, 4, 0.025, 0);
+    public static PIDFCoefficients pidf = new PIDFCoefficients(100, 4, .025, 0);
 
 
 
@@ -131,6 +132,9 @@ public class ScrimmageAuto extends LinearOpMode {
         led.setPattern(RevBlinkinLedDriver.BlinkinPattern.DARK_RED);
         LEDChanged = System.currentTimeMillis();
 
+        telemetry.addData("LEDChanged", "");
+        telemetry.update();
+
         webcam:
         {
             int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
@@ -145,7 +149,10 @@ public class ScrimmageAuto extends LinearOpMode {
             FtcDashboard.getInstance().startCameraStream(webcam, 10);
 
             webcam.openCameraDeviceAsync(() -> webcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT));
+
         }
+        telemetry.addData("webcam initialized", "");
+        telemetry.update();
 
         org.firstinspires.ftc.teamcode.PreProduction.Depreciated.ScrimmageTeleOp.armOffset = 0;
         org.firstinspires.ftc.teamcode.PreProduction.Depreciated.ScrimmageTeleOp.headingOffset = 0;
@@ -157,6 +164,8 @@ public class ScrimmageAuto extends LinearOpMode {
         startPose = new Pose2d(9, 32, Math.toRadians(-0)); //1ft, 7in, -69
         drive.setPoseEstimate(ScrimmageAuto.startPose);
 
+        telemetry.addData("drive initialized", "");
+        telemetry.update();
         wobbleGrabber:
         {
             flipperMotor = this.hardwareMap.get(DcMotorEx.class, "flipperMotor");
@@ -188,12 +197,24 @@ public class ScrimmageAuto extends LinearOpMode {
         topMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         zero = new ZeroRingWaypoints();
         zero.init(drive);
+        telemetry.addData("zero waypoints", "");
+        telemetry.update();
 
         one = new OneRingWaypoints();
         one.init(drive);
+        telemetry.addData("one waypoints", "");
+        telemetry.update();
 
         four = new FourRingWaypoints();
         four.init(drive);
+        telemetry.addData("four waypoints1", "");
+        telemetry.update();
+        four.init2(drive);
+        telemetry.addData("four waypoints2", "");
+        telemetry.update();
+
+
+
 
 
 
@@ -236,29 +257,29 @@ public class ScrimmageAuto extends LinearOpMode {
 //                314
 
                     //sleep to give the shooter time to spin up
-                    sleep(1250);
+                    sleep((long) shotInterval);
                     while (!sc.canShoot()) ;
 
                     //shooting code. Basically setting servo forwards and back repeatedly
                     sc.setServo(ShooterInitializer.position.FORWARD);
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     sc.setServo(ShooterInitializer.position.BACKWARD);
                     //spins up the shooter so that it is prepared to shoot
                     sc.setPower(shooterPower.getPow2());
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     while (!sc.canShoot()) ;
 
 
                     sc.setServo(ShooterInitializer.position.FORWARD);
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     sc.setServo(ShooterInitializer.position.BACKWARD);
                     //spins up the shooter so that it is prepared to shoot
                     sc.setPower(shooterPower.getPow3());
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     while (!sc.canShoot()) ;
 
                     sc.setServo(ShooterInitializer.position.FORWARD);
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     sc.setServo(ShooterInitializer.position.BACKWARD);
                     sleep(100);
 
@@ -302,14 +323,16 @@ public class ScrimmageAuto extends LinearOpMode {
                 {
                     //set grabber to open position
                     grabberServo.setPosition(grabberOpenPos);
-                    sleep(500);
+                    sleep(1000);
                 }
 
                 drive.followTrajectory(paths.toLine);
 
+                sleep(500);
+
                 grabberServo.setPosition(grabberClosedPos);
 
-                sleep(500);
+                sleep(100);
 
 
                 break;
@@ -329,29 +352,29 @@ public class ScrimmageAuto extends LinearOpMode {
 //                314
 
                     //sleep to give the shooter time to spin up
-                    sleep(1250);
+                    sleep((long) shotInterval);
                     while (!sc.canShoot()) ;
 
                     //shooting code. Basically setting servo forwards and back repeatedly
                     sc.setServo(ShooterInitializer.position.FORWARD);
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     sc.setServo(ShooterInitializer.position.BACKWARD);
                     //spins up the shooter so that it is prepared to shoot
                     sc.setPower(shooterPower.getPow2());
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     while (!sc.canShoot()) ;
 
 
                     sc.setServo(ShooterInitializer.position.FORWARD);
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     sc.setServo(ShooterInitializer.position.BACKWARD);
                     //spins up the shooter so that it is prepared to shoot
                     sc.setPower(shooterPower.getPow3());
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     while (!sc.canShoot()) ;
 
                     sc.setServo(ShooterInitializer.position.FORWARD);
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     sc.setServo(ShooterInitializer.position.BACKWARD);
                     sleep(100);
 
@@ -414,13 +437,14 @@ public class ScrimmageAuto extends LinearOpMode {
                     sleep(500);
                 }
 
+
+                drive.followTrajectory(paths.toShoot2);
+
                 flipperMotor.setMotorEnable();
                 flipperMotor.setTargetPosition((int) armStartPos);
 
                 grabberServo.setPosition(grabberClosedPos);
 
-                drive.followTrajectory(paths.toShoot2);
-                flipperMotor.setMotorDisable();
 
                 shooting2:
                 {
@@ -468,34 +492,34 @@ public class ScrimmageAuto extends LinearOpMode {
                 shooting:
                 {
                     //spins up the shooter so that it is prepared to shoot
-//                    sc.setPower(shooterPower.getPow1());
+                    sc.setPower(shooterPower.getPow1());
 
 //                314
 
                     //sleep to give the shooter time to spin up
-//                    sleep(1250);
+                    sleep((long) shotInterval);
                     while (!sc.canShoot()) ;
 
                     //shooting code. Basically setting servo forwards and back repeatedly
                     sc.setServo(ShooterInitializer.position.FORWARD);
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     sc.setServo(ShooterInitializer.position.BACKWARD);
                     //spins up the shooter so that it is prepared to shoot
                     sc.setPower(shooterPower.getPow2());
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     while (!sc.canShoot()) ;
 
 
                     sc.setServo(ShooterInitializer.position.FORWARD);
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     sc.setServo(ShooterInitializer.position.BACKWARD);
                     //spins up the shooter so that it is prepared to shoot
                     sc.setPower(shooterPower.getPow3());
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     while (!sc.canShoot()) ;
 
                     sc.setServo(ShooterInitializer.position.FORWARD);
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     sc.setServo(ShooterInitializer.position.BACKWARD);
                     sleep(100);
 
@@ -523,16 +547,17 @@ public class ScrimmageAuto extends LinearOpMode {
                     sleep(250);
                 }
 
-//                flipperMotor.setMotorEnable();
-//                flipperMotor.setTargetPosition((int) armStartPos);
+
 
                 topMotor.setPower(1);
                 bottomMotor.setPower(1);
 
                 drive.followTrajectory(paths.toRings);
 
-                grabberServo.setPosition(grabberClosedPos);
+//                grabberServo.setPosition(grabberClosedPos);
 
+                flipperMotor.setMotorEnable();
+                flipperMotor.setTargetPosition((int) armStartPos);
 
                 drive.rightFront.setPower(0);
                 drive.rightRear.setPower(0);
@@ -559,35 +584,34 @@ public class ScrimmageAuto extends LinearOpMode {
                 shooting2:
                 {
                     //spins up the shooter so that it is prepared to shoot
-//                    sc.setPower(shooterPower.getPow1());
+                    sc.setPower(shooterPower.getPow1());
 
 //                314
 
                     //sleep to give the shooter time to spin up
-//                    sleep(1250);
-                    long time = System.currentTimeMillis();
-                    while (!sc.canShoot() || System.currentTimeMillis() - time < 400) ;
+                    sleep((long) shotInterval);
+                    while (!sc.canShoot()) ;
 
                     //shooting code. Basically setting servo forwards and back repeatedly
                     sc.setServo(ShooterInitializer.position.FORWARD);
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     sc.setServo(ShooterInitializer.position.BACKWARD);
                     //spins up the shooter so that it is prepared to shoot
                     sc.setPower(shooterPower.getPow2());
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     while (!sc.canShoot()) ;
 
 
                     sc.setServo(ShooterInitializer.position.FORWARD);
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     sc.setServo(ShooterInitializer.position.BACKWARD);
                     //spins up the shooter so that it is prepared to shoot
                     sc.setPower(shooterPower.getPow3());
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     while (!sc.canShoot()) ;
 
                     sc.setServo(ShooterInitializer.position.FORWARD);
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     sc.setServo(ShooterInitializer.position.BACKWARD);
                     sleep(100);
 
@@ -600,42 +624,53 @@ public class ScrimmageAuto extends LinearOpMode {
                 topMotor.setPower(1);
                 bottomMotor.setPower(1);
 
+                flipperMotor.setMotorEnable();
+                flipperMotor.setTargetPosition((int) armForwardPos);
+
                 drive.followTrajectory(paths.toLastRing);
 
+//                flipperMotor.setMotorDisable();
+
+                drive.followTrajectory(paths.toPick);
+
+                grabberServo.setPosition(grabberClosedPos);
+                sleep(250);
+
                 drive.followTrajectory(paths.toShoot3);
+
+//                flipperMotor.setMotorDisable();
 
                 shooting3:
                 {
                     //spins up the shooter so that it is prepared to shoot
-//                    sc.setPower(shooterPower.getPow1());
+                    sc.setPower(shooterPower.getPow1());
 
 //                314
 
                     //sleep to give the shooter time to spin up
-//                    sleep(1250);
-                    long time = System.currentTimeMillis();
-                    while (!sc.canShoot() || System.currentTimeMillis() - time < 400) ;
+                    sleep((long) shotInterval);
+                    while (!sc.canShoot()) ;
 
                     //shooting code. Basically setting servo forwards and back repeatedly
                     sc.setServo(ShooterInitializer.position.FORWARD);
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     sc.setServo(ShooterInitializer.position.BACKWARD);
                     //spins up the shooter so that it is prepared to shoot
                     sc.setPower(shooterPower.getPow2());
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     while (!sc.canShoot()) ;
 
 
                     sc.setServo(ShooterInitializer.position.FORWARD);
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     sc.setServo(ShooterInitializer.position.BACKWARD);
                     //spins up the shooter so that it is prepared to shoot
                     sc.setPower(shooterPower.getPow3());
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     while (!sc.canShoot()) ;
 
                     sc.setServo(ShooterInitializer.position.FORWARD);
-                    sleep(350);
+                    sleep((long) (shotInterval / 2));
                     sc.setServo(ShooterInitializer.position.BACKWARD);
                     sleep(100);
 
@@ -644,6 +679,18 @@ public class ScrimmageAuto extends LinearOpMode {
                     topMotor.setPower(0);
                     bottomMotor.setPower(0);
                 }
+
+                drive.followTrajectory(paths.toDrop2);
+
+                flipperMotor.setMotorEnable();
+                flipperMotor.setTargetPosition((int) armForwardPos);
+                currentPos = (int) armForwardPos;
+                while (!withinTolerance(flipperMotor.getCurrentPosition(), targetPositionTolerance, currentPos)) {
+                    idle();
+                };
+
+                grabberServo.setPosition(grabberOpenPos);
+                sleep(200);
 
                 drive.followTrajectory(paths.toLine);
 
@@ -658,6 +705,7 @@ public class ScrimmageAuto extends LinearOpMode {
 //        while (!isStopRequested()) idle();
 
     }
+
 
 
     public boolean withinTolerance(double value, double tolerance, double setPoint) {

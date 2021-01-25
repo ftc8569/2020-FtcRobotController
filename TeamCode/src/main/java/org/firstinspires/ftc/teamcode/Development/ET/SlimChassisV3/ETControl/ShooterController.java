@@ -33,12 +33,17 @@ public class ShooterController {
     public void setPower(double power) {
         sc.setMotorEnabled();
         sc.spinUp(power);
+        lastPow = pow;
         pow = power;
+        if(lastPow == 0 && pow != 0) {
+            lastEnabled = System.currentTimeMillis();
+        }
     }
 
     public void stopMotor() {
         sc.spinUp(0);
         sc.setMotorDisabled();
+        lastPow = pow;
         pow = 0;
     }
 
@@ -48,16 +53,19 @@ public class ShooterController {
         switch (step) {
             case FORWARD:
                 if (System.currentTimeMillis() - lastFlick > shotInterval * .5) step = Step.BACKWARD;
+                justShot = true;
                 break;
             case BACKWARD:
                 if(shoot && actPow > Math.abs(pow) - veloTolerance &&
                         actPow < Math.abs(pow) + veloTolerance &&
                         System.currentTimeMillis() - lastFlick > shotInterval &&
-                        Math.abs(sc.getVelocity()) > 0) {
+                        Math.abs(sc.getVelocity()) > 0 && System.currentTimeMillis() - lastEnabled > 1000) {
                     lastFlick = System.currentTimeMillis();
                     step = Step.FORWARD;
+                }
+                if(justShot) {
                     shots += 1;
-
+                    justShot = false;
                 }
                 break;
         }

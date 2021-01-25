@@ -25,7 +25,7 @@ public class PowerShotsAutoWithNotAGeckoWheel extends LinearOpMode {
 
     ShooterController sc;
 
-    public static double shot1y = -25.5, shotdelta1 = 6.5, shotdelta2 = 16;
+    public static double shot1y = -25.5, shotdelta1 = 6.75, shotdelta2 = 15.5;
 
     @Override
     public void runOpMode() throws InterruptedException {

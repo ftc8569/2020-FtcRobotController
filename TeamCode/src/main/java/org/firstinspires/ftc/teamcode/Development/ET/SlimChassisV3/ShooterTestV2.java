@@ -38,6 +38,8 @@ public class ShooterTestV2 extends OpMode {
     FtcDashboard dashboard;
 
     public static PIDFCoefficients pidf = new PIDFCoefficients(100, 4, 0.025, 0);
+    //HEavy flywheel, 100, 4, .025, 0
+    //light slywheel, 35, 4, 2, 0
 
 
 
