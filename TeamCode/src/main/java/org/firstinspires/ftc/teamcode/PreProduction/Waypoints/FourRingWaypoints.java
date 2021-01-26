@@ -15,6 +15,7 @@ import static org.firstinspires.ftc.teamcode.Development.ET.drive.DriveConstants
 import static org.firstinspires.ftc.teamcode.Development.ET.drive.DriveConstants.maxAngleAccel;
 import static org.firstinspires.ftc.teamcode.Development.ET.drive.DriveConstants.maxAngleVel;
 import static org.firstinspires.ftc.teamcode.Development.ET.drive.DriveConstants.maxVel;
+import static org.firstinspires.ftc.teamcode.PreProduction.ScrimmageAuto.armStartPos;
 import static org.firstinspires.ftc.teamcode.PreProduction.ScrimmageAuto.slowFactor;
 
 //@Config
@@ -36,6 +37,11 @@ public class FourRingWaypoints extends AutoPaths {
 
         toDrop = drive.trajectoryBuilder(toShootAvoidRings.end())
                 .splineToLinearHeading(new Pose2d(119, 23, Math.toRadians(-55)), Math.toRadians(-55))
+                .addTemporalMarker(.5, 0, () -> {
+                    ScrimmageAuto.flipperMotor.setMotorEnable();
+                    ScrimmageAuto.flipperMotor.setTargetPosition((int) ScrimmageAuto.armForwardPos);
+                    ScrimmageAuto.currentPos = (int) ScrimmageAuto.armForwardPos;
+                })
                 .build();
 
         toRings = drive.trajectoryBuilder(toDrop.end(), true)
@@ -88,12 +94,12 @@ public class FourRingWaypoints extends AutoPaths {
                     ScrimmageAuto.topMotor.setPower(1);
                     ScrimmageAuto.bottomMotor.setPower(1);
                 })
-                .splineToLinearHeading(new Pose2d(26.5,24, Math.toRadians(90)), Math.toRadians(90))
+                .splineToLinearHeading(new Pose2d(26, 31, Math.toRadians(90)), Math.toRadians(90))
                 .addDisplacementMarker(() -> drive.followTrajectory(toPickSlow))
                 .build();
 
         toPickSlow = drive.trajectoryBuilder(toPick.end())
-                .splineToLinearHeading(new Pose2d(26.5, 31, Math.toRadians(90)), Math.toRadians(90))
+                .splineToLinearHeading(new Pose2d(26, 37, Math.toRadians(90)), Math.toRadians(90))
                 .build();
 //
         toShoot3 = drive.trajectoryBuilder(toPickSlow.end())
@@ -101,16 +107,21 @@ public class FourRingWaypoints extends AutoPaths {
                 .addTemporalMarker(.5, 0, () -> {
                     ScrimmageAuto.topMotor.setPower(0);
                     ScrimmageAuto.bottomMotor.setPower(0);
-                        })
-                .addTemporalMarker(.25, 0, () -> {
+                })
+                .addTemporalMarker(.01, 0, () -> {
                     ScrimmageAuto.flipperMotor.setMotorEnable();
-                    ScrimmageAuto.flipperMotor.setTargetPosition((int) ScrimmageAuto.armStartPos);
+                    ScrimmageAuto.flipperMotor.setTargetPosition((int) armStartPos);
                 })
                 .splineToSplineHeading(new Pose2d(68, 37, Math.toRadians(1.5)), Math.toRadians(0))
                 .build();
 //
         toDrop2 = drive.trajectoryBuilder(toShoot3.end())
                 .splineToLinearHeading(new Pose2d(113, 29, Math.toRadians(-55)), Math.toRadians(-55))
+                .addTemporalMarker(.5, 0, () -> {
+                        ScrimmageAuto.flipperMotor.setMotorEnable();
+                        ScrimmageAuto.flipperMotor.setTargetPosition((int) ScrimmageAuto.armForwardPos);
+                        ScrimmageAuto.currentPos = (int) ScrimmageAuto.armForwardPos;
+                })
                 .build();
 //
         toLine = drive.trajectoryBuilder(toDrop2.end())

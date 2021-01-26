@@ -74,9 +74,9 @@ public class ScrimmageTeleOp extends OpMode {
 
     public static double    grabberOpenPos   =  0,
                             grabberClosedPos =  .37,
-                            armStartPos = ScrimmageAutoV2.armStartPos + 360,
-                            armUpPos = ScrimmageAutoV2.armUpPos + 360,
-                            armForwardPos = ScrimmageAutoV2.armForwardPos + 360,
+                            armStartPos = -ScrimmageAuto.armForwardPos,
+                            armUpPos = -ScrimmageAuto.armUpPos,
+                            armForwardPos = 0,
                             powerShotPower = -.715,
                             currentPower = 0,
                             movementMultiplier = 1,
@@ -532,6 +532,13 @@ public class ScrimmageTeleOp extends OpMode {
 
         if(gamepad1.y && System.currentTimeMillis() - lastPressed3 > 10000) drive.setPoseEstimate(new Pose2d(drive.getPoseEstimate().getX(), drive.getPoseEstimate().getY(), 0));
 
+//        if(gamepad1.dpad_left) {
+//            flipperMotor.setTargetPosition((int) armForwardPos);
+//            flipperMotor.setMotorEnable();
+//        } else if (gamepad1.dpad_up) {
+//            flipperMotor.setTargetPosition((int) armStartPos);
+//            flipperMotor.setMotorEnable();
+//        }
 
         if(Math.abs(sc.getVelocity()) > maxVelo) maxVelo = Math.abs(sc.getVelocity());
 
