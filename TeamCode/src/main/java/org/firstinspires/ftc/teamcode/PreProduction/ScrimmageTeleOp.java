@@ -74,8 +74,8 @@ public class ScrimmageTeleOp extends OpMode {
 
     public static double    grabberOpenPos   =  0,
                             grabberClosedPos =  .37,
-                            armStartPos = -ScrimmageAuto.armForwardPos,
-                            armUpPos = -ScrimmageAuto.armUpPos,
+//                            armStartPos = ScrimmageAuto.armForwardPos * -1,
+//                            armUpPos = ScrimmageAuto.armUpPos * -1,
                             armForwardPos = 0,
                             powerShotPower = -.715,
                             currentPower = 0,
