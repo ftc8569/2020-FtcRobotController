@@ -20,6 +20,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -74,25 +75,27 @@ public class ScrimmageTeleOp extends OpMode {
 
     public static double    grabberOpenPos   =  0,
                             grabberClosedPos =  .37,
-//                            armStartPos = ScrimmageAuto.armForwardPos * -1,
+                            armStartPos = 1000,
 //                            armUpPos = ScrimmageAuto.armUpPos * -1,
-                            armForwardPos = 0,
-                            powerShotPower = -.715,
-                            currentPower = 0,
+                            armForwardPos = -1000,
+                            powerShotPower = -.58,
+                            currentPower = 0,   
                             movementMultiplier = 1,
                             maxVelocity = 2400,
-                            veloToleranceTower = .006,
+                            veloToleranceTower = .015,
                             veloTolerancePowerShots = .006,
-                            shotInterval = 350;
+                            shotInterval = 350,
+                            intakePower = .75;
 
 
     public static Pose2d    powerShot1 = new Pose2d(36.5, -42, Math.toRadians(0)),
                             powerShot2 = new Pose2d(36.5, -39, Math.toRadians(0)),
                             powerShot3 = new Pose2d(36.5, -36, Math.toRadians(0));
 
-    public static ShotPowers pows = new ShotPowers(-.68, -.67, -.6665); // powers for straight on shooting.
+    public static ShotPowers pows = new ShotPowers(-.62, -.62, -.62);
+//            new ShotPowers(-.68, -.67, -.6665); // powers for straight on shooting.
     //                                                                      Angle shooting needs higher powers
-    public static PIDFCoefficients pidfCoefficients = new PIDFCoefficients(5, 3, 0, 20);
+    public static PIDFCoefficients pidfCoefficients = new PIDFCoefficients(10, 6, 0, 20);
     public static double pCoefficient = 15;
     public static double ashot1 = pows.getPow1(), ashot2 = pows.getPow2(), ashot3 = pows.getPow3();
 
@@ -127,6 +130,7 @@ public class ScrimmageTeleOp extends OpMode {
 
     int lastShots = 0;
     private Trajectory toShot1, toShot2, toShot3;
+    private FtcDashboard dashboard;
 
     enum Mode {
         DRIVER_CONTROL,
@@ -177,21 +181,21 @@ public class ScrimmageTeleOp extends OpMode {
         telemetry.addData(">", "Initialization started");
         Collections.addAll(ringDists, 3.8, 2.6, 1.5, 1.05);
 
-        webcam:
-        {
-            int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-            webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
-
-            telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
-
-            pipeline = new RingFinderPipelineButIedittedIt(webcam, telemetry);
-            pipeline.pipelineStageToDisplay = PIPELINESTAGE;
-            webcam.setPipeline(pipeline);
-
-            webcam.openCameraDeviceAsync(() -> webcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT));
-
-            FtcDashboard.getInstance().startCameraStream(webcam, 10);
-        }
+//        webcam:
+//        {
+//            int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+//            webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
+//
+//            telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+//
+//            pipeline = new RingFinderPipelineButIedittedIt(webcam, telemetry);
+//            pipeline.pipelineStageToDisplay = PIPELINESTAGE;
+//            webcam.setPipeline(pipeline);
+//
+//            webcam.openCameraDeviceAsync(() -> webcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT));
+//
+//            FtcDashboard.getInstance().startCameraStream(webcam, 10);
+//        }
 
         DriveConstants.maxVel /= 2;
         DriveConstants.maxAccel /= 2;
@@ -204,7 +208,7 @@ public class ScrimmageTeleOp extends OpMode {
 
         SampleMecanumDrive.FOLLOWER_HEADING_TOLERANCE = Math.toRadians(.125);
         SampleMecanumDrive.FOLLOWER_POSITION_TOLERANCE = .06125;
-        SampleMecanumDrive.FOLLOWER_TIMEOUT = .625;
+        SampleMecanumDrive.FOLLOWER_TIMEOUT = .75;
 
         led = hardwareMap.get(RevBlinkinLedDriver.class, "led");
         led.setPattern(RevBlinkinLedDriver.BlinkinPattern.DARK_RED);
@@ -245,6 +249,11 @@ public class ScrimmageTeleOp extends OpMode {
         topMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
         dist = hardwareMap.get(Rev2mDistanceSensor.class, "DistanceSensor");
+
+        FtcDashboard.start();
+        dashboard = FtcDashboard.getInstance();
+        dashboard.setTelemetryTransmissionInterval(50);
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         while(System.currentTimeMillis() - LEDChanged < 1000);
 
@@ -288,25 +297,26 @@ public class ScrimmageTeleOp extends OpMode {
 //        rings = 3;
 
         switch (currentMode) {
-            case DRIVER_CONTROL:
+            case DRIVER_CONTROL: {
                 double[] wheelPows = fod.calculate();
+                if (Math.abs(gamepad1.left_stick_x) > .1 || Math.abs(gamepad1.left_stick_y) > .1 || Math.abs(gamepad1.right_stick_x) > .1) {
+                    drive.setMotorPowers(wheelPows[0], wheelPows[2], wheelPows[3], wheelPows[1]);
+                } else drive.setMotorPowers(0, 0, 0, 0);
 
-                drive.setMotorPowers(wheelPows[0], wheelPows[2], wheelPows[3], wheelPows[1]);
-
-                if(rings == 0 && System.currentTimeMillis() - shooterChanged > 100) {
+                if (rings == 0 && System.currentTimeMillis() - shooterChanged > 100) {
                     spun = false;
                     shooterChanged = System.currentTimeMillis();
                     changedManual = false;
                     changed = false;
-                } else if(rings == 3 && !changed) {
+                } else if (rings == 3 && !changed) {
                     topMotor.setPower(0);
                     bottomMotor.setPower(0);
                     changed = true;
                 }
 
-                if(spun) {
+                if (spun) {
                     movementMultiplier = .5;
-                    switch(rings) {
+                    switch (rings) {
                         case 3:
                             currentPower = pows.getPow1();
                             sc.setPower(currentPower);
@@ -331,16 +341,16 @@ public class ScrimmageTeleOp extends OpMode {
                 }
 
                 sc.update(gamepad1.right_trigger >= .25);
-                if(sc.getShots() != lastShots) {
-                    try {
-                        pipeline.pipelineStageToDisplay = PipelineStages.INPUT;
-                        lastImage = pipeline.CaptureImage();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        telemetry.addData("IOEXCEPTION", e.getMessage());
-                    }
-                    lastShots = sc.getShots();
-                }
+//                if(sc.getShots() != lastShots) {
+//                    try {
+//                        pipeline.pipelineStageToDisplay = PipelineStages.INPUT;
+//                        lastImage = pipeline.CaptureImage();
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                        telemetry.addData("IOEXCEPTION", e.getMessage());
+//                    }
+//                    lastShots = sc.getShots();
+//                }
 
                 if (gamepad1.right_bumper && gamepad1.left_bumper) {
                     // If the A button is pressed on gamepad1, we generate a splineTo()
@@ -359,21 +369,26 @@ public class ScrimmageTeleOp extends OpMode {
                     lastShots = sc.getShots();
 
                     toShot1 = drive.trajectoryBuilder(drive.getPoseEstimate())
-                            .lineToConstantHeading(new Vector2d(0, -25.5))
-                            .addTemporalMarker(.5, 0, () -> sc.setPower(-.6125))
+                            .lineToConstantHeading(new Vector2d(-19.6, -25.5))
+                            .addTemporalMarker(.2, 0, () -> sc.setPower(powerShotPower))
                             .build();
 
                     toShot2 = drive.trajectoryBuilder(toShot1.end())
-                            .lineToConstantHeading(new Vector2d(0, -32.5))
+                            .lineToConstantHeading(new Vector2d(-19.6, -33))
+                            .addTemporalMarker(.01, 0, () -> sc.setPower(powerShotPower))
                             .build();
 
                     toShot3 = drive.trajectoryBuilder(toShot2.end())
-                            .lineToConstantHeading(new Vector2d(0, -41.25))
+                            .lineToConstantHeading(new Vector2d(-19.6, -41.25))
+                            .addTemporalMarker(.01, 0, () -> sc.setPower(powerShotPower))
                             .build();
 
                 }
                 break;
-            case AUTOMATIC_CONTROL:
+            }
+            case AUTOMATIC_CONTROL: {
+
+
 
                 // If x is pressed, we break out of the automatic following
                 if (gamepad1.x) {
@@ -391,54 +406,54 @@ public class ScrimmageTeleOp extends OpMode {
                 switch (pathMode) {
 
                     case toShot1:
-                        if(!driving) {
+                        if (!driving) {
                             drive.followTrajectoryAsync(toShot1);
                             driving = true;
                         }
-                        if(!drive.isBusy()) {
+                        if (!drive.isBusy()) {
                             pathMode = pathPieces.shot1;
                             driving = false;
                         }
                         break;
                     case shot1:
                         sc.update(true);
-                        if(lastShots != sc.getShots()) {
+                        if (lastShots != sc.getShots()) {
                             pathMode = pathPieces.toShot2;
                             lastShots = sc.getShots();
                         }
                         break;
                     case toShot2:
-                        if(!driving) {
+                        if (!driving) {
                             drive.followTrajectoryAsync(toShot2);
                             driving = true;
                         }
 
-                        if(!drive.isBusy()) {
+                        if (!drive.isBusy()) {
                             pathMode = pathPieces.shot2;
                             driving = false;
                         }
                         break;
                     case shot2:
                         sc.update(true);
-                        if(lastShots != sc.getShots()) {
+                        if (lastShots != sc.getShots()) {
                             pathMode = pathPieces.toShot3;
                             lastShots = sc.getShots();
                         }
                         break;
                     case toShot3:
-                        if(!driving) {
+                        if (!driving) {
                             drive.followTrajectoryAsync(toShot3);
                             driving = true;
                         }
 
-                        if(!drive.isBusy()) {
+                        if (!drive.isBusy()) {
                             pathMode = pathPieces.shot3;
                             driving = false;
                         }
                         break;
                     case shot3:
                         sc.update(true);
-                        if(lastShots != sc.getShots()) {
+                        if (lastShots != sc.getShots()) {
                             currentMode = Mode.DRIVER_CONTROL;
                             spun = false;
                             sc.stopMotor();
@@ -446,20 +461,22 @@ public class ScrimmageTeleOp extends OpMode {
                             led.setPattern(RevBlinkinLedDriver.BlinkinPattern.GREEN);
                         }
                         break;
+
+                }
                 }
         }
 
 
 
-        if(gamepad2.right_bumper) {
-            long millis=System.currentTimeMillis();
-            Date date = new Date(millis);
-            String fileName = date.toString() + ".png";
-            if(lastImage != null) {
-                saved = pipeline.saveOpenCvImageToFile(fileName, lastImage);
-                lastImage = null;
-            }
-        }
+//        if(gamepad2.right_bumper) {
+//            long millis=System.currentTimeMillis();
+//            Date date = new Date(millis);
+//            String fileName = date.toString() + ".png";
+//            if(lastImage != null) {
+//                saved = pipeline.saveOpenCvImageToFile(fileName, lastImage);
+//                lastImage = null;
+//            }
+//        }
 
         telemetry.addData("Saved Successfully", saved);
         telemetry.addData("file path", RingFinderPipelineButIedittedIt.VISION_FOLDER.toString());
@@ -489,20 +506,31 @@ public class ScrimmageTeleOp extends OpMode {
 
 
 
-        if(Math.abs(gamepad2.right_stick_y) > .5 || Math.abs(gamepad2.right_stick_x) > .5) {
-            double desAng = Math.atan2(-gamepad2.right_stick_y, -gamepad2.right_stick_x);
-            double desDegrees = Math.toDegrees(desAng); //for my own comfort
-            final double CPR = 753.2;
-            double TPD = CPR / 360;
-            double desTicks = TPD * desDegrees;
-//                    >= 0 ? desDegrees : desDegrees + 180;
+//        if(Math.abs(gamepad2.right_stick_y) > .5 || Math.abs(gamepad2.right_stick_x) > .5) {
+//            double desAng = Math.atan2(-gamepad2.right_stick_y, -gamepad2.right_stick_x);
+//            double desDegrees = Math.toDegrees(desAng); //for my own comfort
+//            final double CPR = 753.2;
+//            double TPD = CPR / 360;
+//            double desTicks = TPD * desDegrees;
+////                    >= 0 ? desDegrees : desDegrees + 180;
+//
+//            flipperMotor.setMotorEnable();
+//            flipperMotor.setTargetPosition((int) desTicks);
+//            telemetry.addData("DesiredDegrees", desDegrees);
+//        } else {
+//            flipperMotor.setMotorDisable();
+//        }
 
+        if(gamepad2.dpad_up) {
             flipperMotor.setMotorEnable();
-            flipperMotor.setTargetPosition((int) desTicks);
-            telemetry.addData("DesiredDegrees", desDegrees);
-        } else {
+            flipperMotor.setTargetPosition((int) armForwardPos);
+        } if (gamepad2.dpad_down) {
+            flipperMotor.setMotorEnable();
+            flipperMotor.setTargetPosition((int) armStartPos);
+        } if(gamepad2.dpad_left || gamepad2.dpad_right) {
             flipperMotor.setMotorDisable();
         }
+
 
 
 //        if         (gamepad2.dpad_up) currentPos = (int) armUpPos;
@@ -520,11 +548,11 @@ public class ScrimmageTeleOp extends OpMode {
         if(gamepad2.a && !gamepad1.start) intakeDirection = intakeDirections.Out;
 
         if(intakeDirection == intakeDirections.In) {
-            topMotor.setPower(1);
-            bottomMotor.setPower(1);
+            topMotor.setPower(intakePower);
+            bottomMotor.setPower(intakePower);
         } else if(intakeDirection == intakeDirections.Out) {
-            topMotor.setPower(-1);
-            bottomMotor.setPower(-1);
+            topMotor.setPower(-intakePower);
+            bottomMotor.setPower(-intakePower);
         } else {
             topMotor.setPower(0);
             bottomMotor.setPower(0);
@@ -533,7 +561,7 @@ public class ScrimmageTeleOp extends OpMode {
         if(gamepad1.y && System.currentTimeMillis() - lastPressed3 > 10000) drive.setPoseEstimate(new Pose2d(drive.getPoseEstimate().getX(), drive.getPoseEstimate().getY(), 0));
 
 //        if(gamepad1.dpad_left) {
-//            flipperMotor.setTargetPosition((int) armForwardPos);
+//            flipperMotor.setTargetPosition((int) armForwardPos);8
 //            flipperMotor.setMotorEnable();
 //        } else if (gamepad1.dpad_up) {
 //            flipperMotor.setTargetPosition((int) armStartPos);
@@ -568,6 +596,7 @@ public class ScrimmageTeleOp extends OpMode {
         telemetry.addData("mode", currentMode);
         telemetry.addData("ArmPosition", flipperMotor.getCurrentPosition());
         telemetry.addData("shots", sc.getShots());
+        telemetry.addData("Left stick x, y", "Left stick X: %.2f, Y: %.2f", gamepad1.left_stick_x, gamepad1.left_stick_y);
 //        telemetry.addData("PDIF", sc.getPIDF());
     }
 

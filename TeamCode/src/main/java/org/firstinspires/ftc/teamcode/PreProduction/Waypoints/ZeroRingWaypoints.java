@@ -7,6 +7,7 @@ import com.acmerobotics.roadrunner.geometry.Vector2d;
 import org.firstinspires.ftc.teamcode.Development.ET.SlimChassisV3.ETControl.AutoPaths;
 import org.firstinspires.ftc.teamcode.Development.ET.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.PreProduction.ScrimmageAuto;
+import org.firstinspires.ftc.teamcode.PreProduction.ScrimmageTeleOp;
 import org.opencv.core.Mat;
 
 @Config
@@ -16,7 +17,7 @@ public class ZeroRingWaypoints extends AutoPaths {
     public void init(SampleMecanumDrive drive) {
         startPose = ScrimmageAuto.startPose;
         toShoot = drive.trajectoryBuilder(startPose)
-            .splineToConstantHeading(new Vector2d(62, 36), Math.toRadians(0.0))
+            .splineToConstantHeading(new Vector2d(65, 36), Math.toRadians(0.0))
             .build();
 
         toDrop = drive.trajectoryBuilder(toShoot.end())
@@ -30,7 +31,7 @@ public class ZeroRingWaypoints extends AutoPaths {
                 .build();
 
         toPickSlow = drive.trajectoryBuilder(toPick.end())
-                .splineToLinearHeading(new Pose2d(35.25,37, Math.toRadians(145)), Math.toRadians(142))
+                .splineToLinearHeading(new Pose2d(33.25,30, Math.toRadians(145)), Math.toRadians(142))
                 .build();
 
         toDrop2 = drive.trajectoryBuilder(toPickSlow.end())

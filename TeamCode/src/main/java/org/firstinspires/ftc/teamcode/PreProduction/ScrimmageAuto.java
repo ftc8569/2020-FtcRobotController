@@ -69,7 +69,7 @@ public class ScrimmageAuto extends LinearOpMode {
     /* Above is all ring finder stuff*/
 
 
-    public Servo grabberServo;
+    public static Servo grabberServo;
     public static DcMotorEx flipperMotor;
     long lastPressed = 0;
 
@@ -78,7 +78,8 @@ public class ScrimmageAuto extends LinearOpMode {
             grabberClosedPos =  ScrimmageTeleOp.grabberClosedPos,
             armStartPos = 0,
             armUpPos = -193,
-            armForwardPos = -314;
+            armForwardPos = -314,
+            intakePower = ScrimmageTeleOp.intakePower;
     public static PIDFCoefficients pidfCoefficients = ScrimmageTeleOp.pidfCoefficients;
     public static double pCoefficient = ScrimmageTeleOp.pCoefficient;
 
@@ -148,7 +149,9 @@ public class ScrimmageAuto extends LinearOpMode {
 
             FtcDashboard.getInstance().startCameraStream(webcam, 10);
 
-            webcam.openCameraDeviceAsync(() -> webcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT));
+            webcam.openCameraDevice( );
+            webcam.openCameraDevice( );
+            webcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
 
         }
         telemetry.addData("webcam initialized", "");
@@ -180,7 +183,7 @@ public class ScrimmageAuto extends LinearOpMode {
             flipperMotor.setMotorDisable();
 
             grabberServo = this.hardwareMap.servo.get("grabberServo");
-            this.grabberServo.setDirection(Servo.Direction.REVERSE);
+            grabberServo.setDirection(Servo.Direction.REVERSE);
             grabberServo.setPosition(grabberClosedPos);
         }
 
@@ -274,7 +277,7 @@ public class ScrimmageAuto extends LinearOpMode {
                     sleep((long) (shotInterval / 2));
                     sc.setServo(ShooterInitializer.position.BACKWARD);
                     //spins up the shooter so that it is prepared to shoot
-                    sc.setPower(shooterPower.getPow3());
+                    sc.setPower(shooterPower.getPow3() );
                     sleep((long) (shotInterval / 2));
                     while (!sc.canShoot()) ;
 
@@ -402,8 +405,8 @@ public class ScrimmageAuto extends LinearOpMode {
                     sleep(300);
                 }
 
-                topMotor.setPower(1);
-                bottomMotor.setPower(1);
+                topMotor.setPower(intakePower + .25);
+                bottomMotor.setPower(intakePower + .25);
 
                 drive.followTrajectory(paths.toRings);
 
@@ -531,22 +534,12 @@ public class ScrimmageAuto extends LinearOpMode {
 
                 drive.followTrajectory(paths.toDrop);
 
-                dropping:
-                {
-                    while (!withinTolerance(flipperMotor.getCurrentPosition(), targetPositionTolerance, currentPos));
-//                    sleep(250);
-
-                    flipperMotor.setMotorDisable();
-
-                    //set grabber to open position
-                    grabberServo.setPosition(grabberOpenPos);
-                    sleep(250);
-                }
 
 
 
-                topMotor.setPower(1);
-                bottomMotor.setPower(1);
+
+                topMotor.setPower(intakePower);
+                bottomMotor.setPower(intakePower);
 
                 drive.followTrajectory(paths.toRings);
 
@@ -560,7 +553,7 @@ public class ScrimmageAuto extends LinearOpMode {
                 drive.leftFront.setPower(0);
                 drive.leftRear.setPower(0);
 
-                sleep(350);
+//                sleep(100);
 
 //                flipperMotor.setMotorDisable();
 
@@ -602,13 +595,6 @@ public class ScrimmageAuto extends LinearOpMode {
                     sleep((long) (shotInterval / 2));
                     sc.setServo(ShooterInitializer.position.BACKWARD);
                     //spins up the shooter so that it is prepared to shoot
-                    sc.setPower(shooterPower.getPow3());
-                    sleep((long) (shotInterval / 2));
-                    while (!sc.canShoot()) ;
-
-                    sc.setServo(ShooterInitializer.position.FORWARD);
-                    sleep((long) (shotInterval / 2));
-                    sc.setServo(ShooterInitializer.position.BACKWARD);
                     sleep(100);
 
                     //stops shooter motor and intake if it is moving
@@ -617,8 +603,8 @@ public class ScrimmageAuto extends LinearOpMode {
                     bottomMotor.setPower(0);
                 }
 
-                topMotor.setPower(1);
-                bottomMotor.setPower(1);
+                topMotor.setPower(intakePower);
+                bottomMotor.setPower(intakePower);
 
                 flipperMotor.setMotorEnable();
                 flipperMotor.setTargetPosition((int) armForwardPos - 50);
@@ -629,8 +615,10 @@ public class ScrimmageAuto extends LinearOpMode {
 
                 drive.followTrajectory(paths.toPick);
 
-                grabberServo.setPosition(grabberClosedPos);
-                sleep(250);
+                ScrimmageAuto.grabberServo.setPosition(ScrimmageAuto.grabberClosedPos);
+
+
+                sleep(200);
 
                 drive.followTrajectory(paths.toShoot3);
 
@@ -672,14 +660,16 @@ public class ScrimmageAuto extends LinearOpMode {
                 drive.followTrajectory(paths.toDrop2);
 
 
-                while (!withinTolerance(flipperMotor.getCurrentPosition(), targetPositionTolerance, currentPos)) {
-                    idle();
-                };
+//                sleep(100);
 
-                grabberServo.setPosition(grabberOpenPos);
-                sleep(200);
+
+
+
+
 
                 drive.followTrajectory(paths.toLine);
+
+                sleep(100);
 
 
 
